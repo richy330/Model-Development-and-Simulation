@@ -6,7 +6,7 @@ classdef Network < handle
         layers     
         structure
         n_weights
-        n_biases
+        n_biases %blabla
         Cb
     end
     
