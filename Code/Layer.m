@@ -42,43 +42,43 @@ classdef Layer < handle
             end
         end
         function obj = set.b(obj, b)
-            [~,y] = size(b);
+            [m,n] = size(b);
             if any(isnan(b))
                 error("Bias set to nan")
-            elseif y == 1
-                obj.b = b;
-            else
+            elseif m ~= obj.n_neurons
                 error("Bias-vector has wrong dimension")
+            else
+                obj.b = b;
             end
         end
         function obj = set.a(obj, a)
-            [~,y] = size(a);
+            [m,n] = size(a);
             if any(isnan(a))
                 error("Activation set to nan")
-            elseif y == 1
-                obj.a = a;
-            else
+            elseif m ~= obj.n_neurons
                 error("Activation-vector has wrong dimension")
+            else
+                obj.a = a;
             end
         end
         function obj = set.z(obj, z)
-            [~,y] = size(z);
+            [m,n] = size(z);
             if any(isnan(z))
                 error("Weighted input set to nan")
-            elseif y == 1
-                obj.z = z;
-            else
+            elseif m ~= obj.n_neurons
                 error("Weighted bias-vector has wrong dimension")
+            else
+                obj.z = z;
             end
         end
         function obj = set.delta(obj, delta)
-            [~,y] = size(delta);
+            [m,n] = size(delta);
             if any(isnan(delta))
                 error("Delta set to nan")
-            elseif y == 1
-                obj.delta = delta;
-            else
+            elseif m ~= obj.n_neurons
                 error("Delta-vector has wrong dimension")
+            else
+                obj.delta = delta;
             end
         end
         
