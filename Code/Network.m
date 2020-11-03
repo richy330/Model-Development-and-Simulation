@@ -68,6 +68,10 @@ classdef Network < handle
             y = obj.layers{end}.a;
         end
         
+        function backprop(obj, y)
+            obj.layers{end}.backprop(y);
+        end
+        
         
         % START NEW IMPLEMENTATION
 %         function gradient_checking(obj, y)
@@ -78,15 +82,18 @@ classdef Network < handle
 %        end
         % END NEW IMPLEMENTATION
 
-        function train(obj, batch, minibatch_size, stepsize)
+        function train(obj, xbatch, ybatch, minibatch_size, stepsize)
             % Run given batch, then update weights and biases according
             % to backpropagation
             % batch ... trainingsdata, 1st row: Input, 2nd row: Result 
             % minibatch_size... size of minibatch, recommended max = 32
             % stepsize ... size of applied adjustment between training sessions
             
-            if ~isa(batch, 'double')
-                error("Wrong datatype of argument 'batch' passed to 'train' method in Network. Pass training data as datatype 'double'")
+            if ~isa(xbatch, 'double')
+                error("Wrong datatype of argument 'xbatch' passed to 'train' method in Network. Pass training data as datatype 'double'")
+            end
+            if ~isa(ybatch, 'double')
+                error("Wrong datatype of argument 'ybatch' passed to 'train' method in Network. Pass training data as datatype 'double'")
             end
             if ~isscalar(minibatch_size) || ~(mod(minibatch_size, 1) == 0)
                 error("Wrong datatype of argument 'minibatch_size'. Supply minibatch size as integer scalar")
@@ -95,77 +102,93 @@ classdef Network < handle
                 error("Wrong datatype of argument 'stepsize'. Supply stepsize as scalar")
             end
             
-            [n_examples, xy] = size(batch);
-            if ~(xy == obj.layers{1}.n_neurons + obj.layers{end}.n_neurons)
-                error("Wrong number of columns of 'batch' passed to function 'train'. Column number should be equal to number of neurons in input + output layer")
+            [mx, nx] = size(xbatch);
+            [my, ny] = size(ybatch);
+            if ~(mx == obj.layers{1}.n_neurons)
+                error("Wrong number of rows in 'xbatch' passed to function 'train'. Row-number should be equal to number of neurons in input-layer")
+            elseif ~(my == obj.layers{end}.n_neurons)
+                error("Wrong number of rows in 'ybatch' passed to function 'train'. Row-number should be equal to number of neurons in output-layer")
+            elseif nx ~= ny
+                error("Number of columns in 'xbatch' and 'ybatch' do not agree. Make sure that number of training examples agrees")
             end
             
-            % iterating over examples and extracting minibatches,
-            % train on minibatch and adjust weights and biases for each
-            % minibatch
-            n_minibatches = floor(n_examples/minibatch_size);
+            % extracting minibatches from given examples,
+            % forward x-minibatch to set z and a,
+            % backprop y-minibatch to set delta,
+            % perform descent based on calculated deltas
+            n_minibatches = floor(nx/minibatch_size);
             eta_m = stepsize/minibatch_size;
             for n = 1:n_minibatches
                 minibatch_start = (n-1)*minibatch_size + 1;
                 minibatch_end = n*minibatch_size;
-                minibatch = batch(minibatch_start:minibatch_end, :);
                 
-                bx_corr_matrx = zeros(obj.n_biases, n_minibatches);
-                wx_corr_matrx = zeros(obj.n_weights, n_minibatches);
-                Cb = 0;
-                % iterating over minibatch, applying correction matrices
-                % and vectors
-                for i = 1:minibatch_size
-                    % extract x and y vector from input, set deltas by
-                    % backprop-method
-                    x = minibatch(i, 1:obj.layers{1}.n_neurons);
-                    y = minibatch(i, obj.layers{1}.n_neurons+1:end);
-                    obj.backprop(x, y);
-                    
-                    bx_corr = zeros(1, obj.n_biases);   % col-vector, contains correction values for minibatch
-                    wx_corr = zeros(1, obj.n_weights);  % same
-                    bx_startindex = 1;
-                    wx_startindex = 1;
-                    Cb = Cb + 1/2 * (obj.layers{end}.a - y)^2;
-                    
-                    % iterating through layers, collecting correction-values
-                    % of weights and biases, combining them in two vectors
-                    for l = 2:numel(obj.layers)
-                        bx_endindex = bx_startindex + numel(obj.layers{l}.b)-1;
-                        wx_endindex = wx_startindex + numel(obj.layers{l}.W)-1;
-                        
-                        bx_corr(bx_startindex:bx_endindex) = eta_m * obj.layers{l}.delta;
-                        wx_corr(wx_startindex:wx_endindex) = reshape(eta_m * obj.layers{l-1}.a*obj.layers{l}.delta', [], 1);
-                        
-                        bx_startindex = bx_endindex + 1;
-                        wx_startindex = wx_endindex + 1; 
-                    end % collecting correction values for 1 example
-                    
-                    bx_corr_matrx(:, i) = bx_corr;
-                    wx_corr_matrx(:, i) = wx_corr;
-                end % collectin correction values for 1 minibatch
-                obj.Cb = [obj.Cb; Cb];
-                bx_corr = sum(bx_corr_matrx, 2);
-                wx_corr = sum(wx_corr_matrx, 2);
+                x_minibatch = xbatch(:, minibatch_start:minibatch_end);
+                y_minibatch = ybatch(:, minibatch_start:minibatch_end);
                 
-                bx_startindex = 1;
-                wx_startindex = 1;
-                % applying averaged correction values to all layers
+                obj.forward(x_minibatch);
+                obj.backprop(y_minibatch);
                 
-                %% possible Error - indizes of matrix might not line up correctly
+                % performing gradient descent on all layers
                 for l = 2:numel(obj.layers)
-                    bx_endindex = bx_startindex + numel(obj.layers{l}.b)-1;
-                    wx_endindex = wx_startindex + numel(obj.layers{l}.W)-1;
-                    
-                    wxl_corr = reshape(wx_corr(wx_startindex:wx_endindex), size(obj.layers{l}.W));
-                    bxl_corr = bx_corr(bx_startindex:bx_endindex);
-                    obj.layers{l}.b = obj.layers{l}.b - bxl_corr;
-                    obj.layers{l}.W = obj.layers{l}.W - wxl_corr;
-                    
-                    bx_startindex = bx_endindex + 1;
-                    wx_startindex = wx_endindex + 1;
-                end % applying correction
-                  
+                    obj.layers{l}.descend(eta_m)
+                end
+%                 
+%                 bx_corr_matrx = zeros(obj.n_biases, n_minibatches);
+%                 wx_corr_matrx = zeros(obj.n_weights, n_minibatches);
+%                 Cb = 0;
+%                 % iterating over minibatch, applying correction matrices
+%                 % and vectors
+%                 for i = 1:minibatch_size
+%                     % extract x and y vector from input, set deltas by
+%                     % backprop-method
+%                     x = minibatch(i, 1:obj.layers{1}.n_neurons);
+%                     y = minibatch(i, obj.layers{1}.n_neurons+1:end);
+%                     obj.backprop(x, y);
+%                     
+%                     bx_corr = zeros(1, obj.n_biases);   % col-vector, contains correction values for minibatch
+%                     wx_corr = zeros(1, obj.n_weights);  % same
+%                     bx_startindex = 1;
+%                     wx_startindex = 1;
+%                     Cb = Cb + 1/2 * (obj.layers{end}.a - y)^2;
+%                     
+%                     % iterating through layers, collecting correction-values
+%                     % of weights and biases, combining them in two vectors
+%                     for l = 2:numel(obj.layers)
+%                         bx_endindex = bx_startindex + numel(obj.layers{l}.b)-1;
+%                         wx_endindex = wx_startindex + numel(obj.layers{l}.W)-1;
+%                         
+%                         bx_corr(bx_startindex:bx_endindex) = eta_m * obj.layers{l}.delta;
+%                         wx_corr(wx_startindex:wx_endindex) = reshape(eta_m * obj.layers{l-1}.a*obj.layers{l}.delta', [], 1);
+%                         
+%                         bx_startindex = bx_endindex + 1;
+%                         wx_startindex = wx_endindex + 1; 
+%                     end % collecting correction values for 1 example
+%                     
+%                     bx_corr_matrx(:, i) = bx_corr;
+%                     wx_corr_matrx(:, i) = wx_corr;
+%                 end % collectin correction values for 1 minibatch
+%                 obj.Cb = [obj.Cb; Cb];
+%                 bx_corr = sum(bx_corr_matrx, 2);
+%                 wx_corr = sum(wx_corr_matrx, 2);
+%                 
+%                 bx_startindex = 1;
+%                 wx_startindex = 1;
+%                 % applying averaged correction values to all layers
+%                 
+%                 %% possible Error - indizes of matrix might not line up correctly
+%                 for l = 2:numel(obj.layers)
+%                     bx_endindex = bx_startindex + numel(obj.layers{l}.b)-1;
+%                     wx_endindex = wx_startindex + numel(obj.layers{l}.W)-1;
+%                     
+%                     wxl_corr = reshape(wx_corr(wx_startindex:wx_endindex), size(obj.layers{l}.W));
+%                     bxl_corr = bx_corr(bx_startindex:bx_endindex);
+%                     obj.layers{l}.b = obj.layers{l}.b - bxl_corr;
+%                     obj.layers{l}.W = obj.layers{l}.W - wxl_corr;
+%                     
+%                     bx_startindex = bx_endindex + 1;
+%                     wx_startindex = wx_endindex + 1;
+%                 end % applying correction
+%                   
             end % processing batch
         end % train
 
