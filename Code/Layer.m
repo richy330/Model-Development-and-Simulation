@@ -13,6 +13,8 @@ classdef Layer < handle
         % Functions:
         f_sigma                 % Activation Function, sigma(z)
         f_sigmaDer              % Derivation Function(sigma)/dz
+        f_cost
+        f_costDer
         % Variables:
         z                       % weighted input
         dsigma_dz               % gradient of sigma function with respect to z
@@ -120,6 +122,24 @@ classdef Layer < handle
                 end
             end
         end % forward
+        
+        function backprop(obj, y)
+            % Applying backpropagation algorithm, determining errors for
+            % each individual layer and storing them in respective layer
+                
+            if ~isa(y, 'double')
+                error("Wrong datatype for variable 'y' calling backprop. Define output-vector by passing a variable of type 'double'")
+            end
+            if ~(numel(y) == obj.layers{end}.n_neurons)
+                error("Error calling function 'backprop'. Number of elements in passed y-vector is different from neuron-count in output neuron layer")
+            end
+            
+            if isempty(obj.next)
+                obj.delta = f_costDer(y) .* obj.dsigma_dz
+            elseif ~isempty(obj.prev)
+                obj.delta = (obj.next.W * obj.next.delta) .* obj.dsigma_dz;
+            end
+        end % backpropagation
         
 
 %% Helper functions

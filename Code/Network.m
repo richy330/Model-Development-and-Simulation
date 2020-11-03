@@ -11,7 +11,7 @@ classdef Network < handle
     end
     
     methods
-        function obj = Network(nn_structure, activ_func)
+        function obj = Network(nn_structure, activ_func, cost_func)
             % Constructs Neural Network, layers with neuron-count
             % determined by nn_structure
             % nn_structure ... vector that defines neurons per layer
@@ -46,6 +46,20 @@ classdef Network < handle
                 obj.n_weights = obj.n_weights + numel(layer.W);
                 obj.n_biases = obj.n_biases + numel(layer.b);
             end
+            % set proper cos functions for the layers
+            switch cost_func
+                case "quadratic"
+                    f_cost = @(a, y) 0.5 * sum((a-y).^2);
+                    f_costDer = @(a, y) a - y;
+                case "cross-entropy"
+                    f_cost = @(a, y) sum(y*log(a) + (1-y)*log(1-a));
+                    f_costDer = @(a, y) (a-y) / ((a)*(1-a));
+            end % switch cost_func
+                
+            for i = 1:numel(obj.layers)
+                obj.layers{i}.f_cost = f_cost;
+                obj.layers{i}.f_costDer = f_costDer;
+            end % setting costfunctions and derivatives for layers
             
         end % Constructor
         
@@ -54,51 +68,14 @@ classdef Network < handle
             y = obj.layers{end}.a;
         end
         
-        function backprop(obj, x, y)
-            % Applying backpropagation algorithm, determining errors for
-            % each individual layer and storing them in respective layer
-            
-            % For sake of single-responibility principle, the gradient 
-            % calculation will be implemented in train-function            
-
-            if ~isa(x, 'double')
-                error("Wrong datatype for variable 'x' calling backprop. Define input-vector by passing a variable of type 'double'")
-            end
-            if ~(numel(x) == obj.layers{1}.n_neurons)
-                error("Error calling function 'backprop'. Number of elements in passed x-vector is different from neuron-count in first neuron layer")
-            end
-                
-            if ~isa(y, 'double')
-                error("Wrong datatype for variable 'y' calling backprop. Define output-vector by passing a variable of type 'double'")
-            end
-            if ~(numel(y) == obj.layers{end}.n_neurons)
-                error("Error calling function 'backprop'. Number of elements in passed y-vector is different from neuron-count in output neuron layer")
-            end
-            
-            
-            % forwarding provided data through network, 
-            % calculating error-vector for each layer by backpropagation
-            obj.layers{1}.forward(x);
-            l = obj.layers{end};
-            l.delta = (l.a - y) .* l.dsigma_dz;
-            W = l.W;
-            
-            for i = numel(obj.layers)-1:-1:2
-                l = obj.layers{i};
-                l.delta = (W * l.delta) .* l.dsigma_dz;
-                
-                W = l.W;                
-            end
-            
-        end % backpropagation
         
         % START NEW IMPLEMENTATION
-        function gradient_checking(obj, y)
-            cost_function = @(a,y) (y*ln(a)+(1-y)*ln(1-a));
-            a_NN = obj.forward(y);
-            Cost = cost_function(a_NN, 
+%         function gradient_checking(obj, y)
+%             cost_function = @(a,y) (y*ln(a)+(1-y)*ln(1-a));
+%             a_NN = obj.forward(y);
+%             Cost = cost_function(a_NN, 
 
-        end
+%        end
         % END NEW IMPLEMENTATION
 
         function train(obj, batch, minibatch_size, stepsize)
