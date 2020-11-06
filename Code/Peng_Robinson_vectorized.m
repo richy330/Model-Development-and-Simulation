@@ -69,14 +69,14 @@ while ~all(converged)
     Vm = [vm_liquid, vm_vapor];
 
     %% Calculation of fugacities
-    phi = @(Z) exp(Z - 1 - log(Z - B) - A./(2*2^0.5*B).*log((Z+2.414*B)./(Z-0.414*B)));
+    phi = @(Z) exp(Z - 1 - log(Z - B) - A./(2*2^0.5*B).*log((Z+2.414*B)./(Z-0.414*B))); % PR Equ 15
 
     Z_liquid = p.*vm_liquid ./ (R*T);
     Z_vapor = p.*vm_vapor ./ (R*T);
     phi_liquid = phi(Z_liquid);
     phi_vapor = phi(Z_vapor);
     
-    converged = (abs(phi_liquid.*p - phi_vapor.*p)) <= 1;
+    converged = (abs(phi_liquid.*p - phi_vapor.*p)) <= 1;                               % PR Equ 16
     p = real(p.*phi_liquid./phi_vapor);
     n = n+1;
     if n >= 100
