@@ -150,7 +150,55 @@ classdef Layer < handle
             obj.b = obj.b - eta_m * dCdb;
         end % gradient descent
         
+        
+        
+        function [dC_dW, dC_db] = gradient_checking(obj,x, y)
+            % Global Cost Function
+            cost_function = @(a,y) (y*log(a)+(1-y)*log(1-a));
+            % Calculates the Gradient
+            dC_dW = [];
+            dC_db = [];
+            C_plus = 0;
+            C_minus = 0;
+            e = 10^-4;
+            for n_run = 1:numel(x)
+                x_run = x(n_run); % input value of respective run
+                y_run = y(n_run); % output value of respective run
+                
+                for n_layer = numel(obj.layers):-1:2
+                    W = obj.layers{n_layer}.W;
+                    b = obj.layers{n_layer}.b;
+                    % Calculation of dC_dW
+                    for column_W = 1:size(W,2)
+                        for row_W = 1:size(W,1)
+                            %Calculate Error with positive Change
+                            obj.layers{n_layer}.W(row_W, column_W) = W(row_W, column_W) + e;
+                            C_plus = cost_function(obj.forward(x_run), y_run);
+                            % Calculate Error with negative Change
+                            obj.layers{n_layer}.W(row_W, column_W) = W(row_W, column_W) - e;
+                            C_minus = cost_function(obj.forward(x_run), y_run);
+                            % Estimation of Gradient:
+                            dC_dW = [dC_dW, (C_plus - C_minus)/(2*e)];
+                            % Reinitialize W data for next run:
+                            obj.layers{n_layer}.W(row_W, column_W) = W(row_W, column_W);
+                        end
+                    end
+                    % Calculation of dC_db
+                    for column_b = 1:numel(b) 
+                        obj.layers{n_layer}.b(column_b) = b(column_b) + e;
+                        C_plus = cost_function(obj.forward(x_run), y_run) ;
 
+                        obj.layers{n_layer}.b(column_b) = b(column_b) - e;
+                        C_minus = cost_function(obj.forward(x_run), y_run);
+
+                        dC_db = [dC_db, (C_plus - C_minus)/(2*e)];
+                        obj.layers{n_layer}.b(column_b) = b(column_b);
+                    end 
+                end %n_layer
+            end %n_run
+        end
+        
+        
 %% Helper functions
         function f_definition(obj, activ_func)
             % SETTING ACTIVATION AND ACTIVATIONDERIVATIVE FUNCTION
