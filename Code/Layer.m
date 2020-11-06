@@ -42,43 +42,43 @@ classdef Layer < handle
             end
         end
         function obj = set.b(obj, b)
-            [~,y] = size(b);
+            [m,n] = size(b);
             if any(isnan(b))
                 error("Bias set to nan")
-            elseif y == 1
-                obj.b = b;
-            else
+            elseif m ~= obj.n_neurons
                 error("Bias-vector has wrong dimension")
+            else
+                obj.b = b;
             end
         end
         function obj = set.a(obj, a)
-            [~,y] = size(a);
+            [m,n] = size(a);
             if any(isnan(a))
                 error("Activation set to nan")
-            elseif y == 1
-                obj.a = a;
-            else
+            elseif m ~= obj.n_neurons
                 error("Activation-vector has wrong dimension")
+            else
+                obj.a = a;
             end
         end
         function obj = set.z(obj, z)
-            [~,y] = size(z);
+            [m, n] = size(z);
             if any(isnan(z))
                 error("Weighted input set to nan")
-            elseif y == 1
-                obj.z = z;
+            elseif m ~= obj.n_neurons
+                error(strcat("z has wrong number of rows. Should be [", num2str(obj.n_neurons), ", x], received [", num2str(size(z)), "]"))
             else
-                error("Weighted bias-vector has wrong dimension")
+                obj.z = z;
             end
         end
         function obj = set.delta(obj, delta)
-            [~,y] = size(delta);
+            [m,n] = size(delta);
             if any(isnan(delta))
                 error("Delta set to nan")
-            elseif y == 1
-                obj.delta = delta;
-            else
+            elseif m ~= obj.n_neurons
                 error("Delta-vector has wrong dimension")
+            else
+                obj.delta = delta;
             end
         end
         
@@ -115,7 +115,7 @@ classdef Layer < handle
                 obj.z = obj.W'*inputs + obj.b;
                 obj.a = obj.f_sigma(obj.z);
                 obj.dsigma_dz = obj.f_sigmaDer(obj.z);
-                if ~isempty(obj.next) % Last layer must not forward
+                if ~isempty(obj.next) % forward whenever there are next layers
                     obj.next.forward(obj.a);
                 else
                     return % if last Layer - Stop forward
@@ -125,23 +125,80 @@ classdef Layer < handle
         
         function backprop(obj, y)
             % Applying backpropagation algorithm, determining errors for
-            % each individual layer and storing them in respective layer
-                
-            if ~isa(y, 'double')
-                error("Wrong datatype for variable 'y' calling backprop. Define output-vector by passing a variable of type 'double'")
-            end
-            if ~(numel(y) == obj.layers{end}.n_neurons)
-                error("Error calling function 'backprop'. Number of elements in passed y-vector is different from neuron-count in output neuron layer")
-            end
+            % corresponding layer, storing error parameter 'delta'
             
             if isempty(obj.next)
-                obj.delta = f_costDer(y) .* obj.dsigma_dz
+                obj.delta = obj.f_costDer(obj.a, y) .* obj.dsigma_dz;
             elseif ~isempty(obj.prev)
                 obj.delta = (obj.next.W * obj.next.delta) .* obj.dsigma_dz;
             end
+            
+            if ~isempty(obj.prev)
+                obj.prev.backprop()
+            end
         end % backpropagation
         
+        
+        function [dCdW, dCdb] = get_gradient(obj)
+            dCdW = [obj.delta * obj.prev.a']';
+            dCdb = sum(obj.delta, 2);
+        end % get gradient
+        
+        function descend(obj, eta_m)
+            [dCdW, dCdb] = obj.get_gradient();
+            obj.W = obj.W - eta_m * dCdW;
+            obj.b = obj.b - eta_m * dCdb;
+        end % gradient descent
+        
+        
+        
+        function [dC_dW, dC_db] = gradient_checking(obj,x, y)
+            % Global Cost Function
+            cost_function = @(a,y) (y*log(a)+(1-y)*log(1-a));
+            % Calculates the Gradient
+            dC_dW = [];
+            dC_db = [];
+            C_plus = 0;
+            C_minus = 0;
+            e = 10^-4;
+            for n_run = 1:numel(x)
+                x_run = x(n_run); % input value of respective run
+                y_run = y(n_run); % output value of respective run
+                
+                for n_layer = numel(obj.layers):-1:2
+                    W = obj.layers{n_layer}.W;
+                    b = obj.layers{n_layer}.b;
+                    % Calculation of dC_dW
+                    for column_W = 1:size(W,2)
+                        for row_W = 1:size(W,1)
+                            %Calculate Error with positive Change
+                            obj.layers{n_layer}.W(row_W, column_W) = W(row_W, column_W) + e;
+                            C_plus = cost_function(obj.forward(x_run), y_run);
+                            % Calculate Error with negative Change
+                            obj.layers{n_layer}.W(row_W, column_W) = W(row_W, column_W) - e;
+                            C_minus = cost_function(obj.forward(x_run), y_run);
+                            % Estimation of Gradient:
+                            dC_dW = [dC_dW, (C_plus - C_minus)/(2*e)];
+                            % Reinitialize W data for next run:
+                            obj.layers{n_layer}.W(row_W, column_W) = W(row_W, column_W);
+                        end
+                    end
+                    % Calculation of dC_db
+                    for column_b = 1:numel(b) 
+                        obj.layers{n_layer}.b(column_b) = b(column_b) + e;
+                        C_plus = cost_function(obj.forward(x_run), y_run) ;
 
+                        obj.layers{n_layer}.b(column_b) = b(column_b) - e;
+                        C_minus = cost_function(obj.forward(x_run), y_run);
+
+                        dC_db = [dC_db, (C_plus - C_minus)/(2*e)];
+                        obj.layers{n_layer}.b(column_b) = b(column_b);
+                    end 
+                end %n_layer
+            end %n_run
+        end
+        
+        
 %% Helper functions
         function f_definition(obj, activ_func)
             % SETTING ACTIVATION AND ACTIVATIONDERIVATIVE FUNCTION
