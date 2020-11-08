@@ -10,11 +10,6 @@ classdef Layer < handle
     
     properties
         % PROPERTIES OF CLASS LAYER
-        % Functions:
-        f_sigma                 % Activation Function, sigma(z)
-        f_sigmaDer              % Derivation Function(sigma)/dz
-        f_cost
-        f_costDer
         % Variables:
         z                       % weighted input
         dsigma_dz               % gradient of sigma function with respect to z
@@ -24,6 +19,11 @@ classdef Layer < handle
         delta                   % error-vector
         n_inputs                % number of inputs
         n_neurons               % number of neurons
+        % Functions:
+        f_sigma                 % Activation Function, sigma(z)
+        f_sigmaDer              % Derivation Function(sigma)/dz
+        f_cost
+        f_costDer
         % Linked List Attributes:
         next                    % Next Layer inside of the NN
         prev                    % Previous Layer inside of the NN
@@ -95,7 +95,7 @@ classdef Layer < handle
             obj.f_definition(activ_func); % Defines Activitation Function
         end
         
-        function forward(obj, inputs)
+        function y = forward(obj, inputs)
             % FEEDFORWARD FOR NN 
             % Calculating activation, weighted inputs and derivations
             % according to current weights and biases, given activation
@@ -118,6 +118,7 @@ classdef Layer < handle
                 if ~isempty(obj.next) % forward whenever there are next layers
                     obj.next.forward(obj.a);
                 else
+                    y = obj.a; % NEW TEST!
                     return % if last Layer - Stop forward
                 end
             end
@@ -143,14 +144,16 @@ classdef Layer < handle
             dCdW = [obj.delta * obj.prev.a']';
             dCdb = sum(obj.delta, 2);
         end % get gradient
-        
+            
         function descend(obj, eta_m)
             [dCdW, dCdb] = obj.get_gradient();
             obj.W = obj.W - eta_m * dCdW;
             obj.b = obj.b - eta_m * dCdb;
         end % gradient descent
-        
 
+
+        
+        
 %% Helper functions
         function f_definition(obj, activ_func)
             % SETTING ACTIVATION AND ACTIVATIONDERIVATIVE FUNCTION

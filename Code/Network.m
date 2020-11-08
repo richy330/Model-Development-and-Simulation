@@ -6,7 +6,7 @@ classdef Network < handle
         layers     
         structure
         n_weights
-        n_biases
+        n_biases 
         Cb
     end
     
@@ -52,7 +52,7 @@ classdef Network < handle
                     f_cost = @(a, y) 0.5 * sum((a-y).^2);
                     f_costDer = @(a, y) a - y;
                 case "cross-entropy"
-                    f_cost = @(a, y) sum(y*log(a) + (1-y)*log(1-a));
+                    f_cost = @(a, y) -(sum(y*log(a) + (1-y)*log(1-a), 'all'));
                     f_costDer = @(a, y) (a-y) / ((a)*(1-a));
             end % switch cost_func
                 
@@ -67,11 +67,37 @@ classdef Network < handle
             obj.layers{1}.forward(x);
             y = obj.layers{end}.a;
         end
+       
         
         function backprop(obj, y)
             obj.layers{end}.backprop(y);
         end
 
+        
+        function [dC_dW_backprob, dC_db_backprob, dCdW_linear, dCdB_linear] = gradient_checker(obj,x,y)
+            % gradient_backprob 
+            obj.layers{1}.forward(x);
+            obj.layers{end}.backprop(y);
+            dC_dW_backprob = []; 
+            dC_db_backprob = [];
+            layer = obj.layers{end};
+            
+            for n_run = 1:numel(x)
+                while ~isempty(layer.prev) 
+                    [dC_dW_back, dC_db_back] = layer.get_gradient();
+                    dC_dW_back = dC_dW_back(:);
+                    %[a,b] = size(dC_dW_back)% Gradient 
+                    [dC_dW_backprob] = [dC_dW_backprob; dC_dW_back];
+                    [dC_db_backprob] = [dC_db_backprob; dC_db_back];
+                    layer = layer.prev;
+                end
+            end
+                
+            % gradient_linear
+            [dCdW_linear, dCdB_linear] = obj.gradient_checking(x,y);
+            
+        end
+        
         function train(obj, xbatch, ybatch, minibatch_size, stepsize)
             % Run given batch, then update weights and biases according
             % to backpropagation
@@ -126,6 +152,54 @@ classdef Network < handle
             end % processing batch
         end % train
 
+        function [dC_dW, dC_db] = gradient_checking(obj,x, y)
+            % Global Cost Function
+            cost_function = obj.layers{end}.f_cost; %(obj.layers{end}.a,y);
+            %Calculates the Gradient
+            dC_dW = [];
+            dC_db = [];
+            C_plus = 0; % Cost term for C + e 
+            C_minus = 0; % Cost term for C - e
+            e = 10^-4; % factor for approximation of cost
+            
+            for n_run = 1:numel(x) %atthe moment necessarily 
+                x_run = x(n_run);
+                y_run = y(n_run);
+                
+                for n_layer = numel(obj.layers):-1:2
+                    W = obj.layers{n_layer}.W;
+                    b = obj.layers{n_layer}.b;
+                    % Calculation of dC_dW
+                    for column_W = 1:size(W,2)
+                        for row_W = 1:size(W,1)
+                            %Calculate Error with positive Change
+                            obj.layers{n_layer}.W(row_W, column_W) = W(row_W, column_W) + e;
+                            C_plus = cost_function(obj.forward(x_run), y_run);
+                            % Calculate Error with negative Change
+                            obj.layers{n_layer}.W(row_W, column_W) = W(row_W, column_W) - e;
+                            C_minus = cost_function(obj.forward(x_run), y_run);
+                            % Estimation of Gradient:
+                            dC_dW = [dC_dW, (C_plus - C_minus)/(2*e)];
+                            % Reinitialize W data for next run:
+                            obj.layers{n_layer}.W(row_W, column_W) = W(row_W, column_W);
+                        end
+                    end
+                    % Calculation of dC_db
+                    for column_b = 1:numel(b) 
+                        obj.layers{n_layer}.b(column_b) = b(column_b) + e;
+                        C_plus = cost_function(obj.forward(x_run), y_run) ;
+
+                        obj.layers{n_layer}.b(column_b) = b(column_b) - e;
+                        C_minus = cost_function(obj.forward(x_run), y_run);
+
+                        dC_db = [dC_db, (C_plus - C_minus)/(2*e)];
+                        obj.layers{n_layer}.b(column_b) = b(column_b);
+                    end 
+                end %n_layer
+            end %n_run
+        end
+        
+        
     end % methods
 end % classdef
 
