@@ -63,6 +63,7 @@ classdef Network < handle
             
         end % Constructor
         
+        
         function [y] = forward(obj, x)
             obj.layers{1}.forward(x);
             y = obj.layers{end}.a;
@@ -148,7 +149,6 @@ classdef Network < handle
                 for l = 2:numel(obj.layers)
                     obj.layers{l}.descend(eta_m)
                 end
-                   
             end % processing batch
         end % train
 
@@ -198,8 +198,7 @@ classdef Network < handle
                 end %n_layer
             end %n_run
         end
-        
-        
+         
     end % methods
 end % classdef
 
