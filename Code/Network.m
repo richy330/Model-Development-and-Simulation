@@ -53,7 +53,7 @@ classdef Network < handle
                     f_costDer = @(a, y) a - y;
                 case "cross-entropy"
                     f_cost = @(a, y) -(sum(y*log(a) + (1-y)*log(1-a), 'all'));
-                    f_costDer = @(a, y) (a-y) / ((a)*(1-a));
+                    f_costDer = @(a, y) (a-y) ./ ((a).*(1-a));
             end % switch cost_func
                 
             for i = 1:numel(obj.layers)
@@ -63,14 +63,36 @@ classdef Network < handle
             
         end % Constructor
         
+        function check_validity(obj, values, value_name)
+            % Ckecks given values for their validity and raises apropriate
+            % error
+            nans = any(isnan(values));
+            infs = any(isinf(values));
+            oob1 = any(abs(values) > 1);
+            oob5 = any(abs(values) > 5);
+            nodouble = ~isa(values, 'double');
+            
+            if any([nans, infs])
+                error(strcat("nan "*nans, "inf "*infs, "found within ", value_name))
+            elseif oob5
+                error(strcat(value_name, " out of bounds (plus/minus 5). Try to normalize values between plus/minus 1"))
+            elseif oob1
+                warning(strcat(value_name, " out of bounds (plus/minus 1). Try to normalize values between plus/minus 1"))
+            elseif nodouble
+                error(strcat("Type Error in ", value_name, ". Expected 'double', got ", class(values), " instead"))
+            end
+        end
+        
         
         function [y] = forward(obj, x)
+            obj.check_validity(x, "forwarded Values");
             obj.layers{1}.forward(x);
             y = obj.layers{end}.a;
         end
        
         
         function backprop(obj, y)
+            obj.check_validity(y, "backpropagated Results");
             obj.layers{end}.backprop(y);
         end
 
@@ -106,12 +128,9 @@ classdef Network < handle
             % minibatch_size... size of minibatch, recommended max = 32
             % stepsize ... size of applied adjustment between training sessions
             
-            if ~isa(xbatch, 'double')
-                error("Wrong datatype of argument 'xbatch' passed to 'train' method in Network. Pass training data as datatype 'double'")
-            end
-            if ~isa(ybatch, 'double')
-                error("Wrong datatype of argument 'ybatch' passed to 'train' method in Network. Pass training data as datatype 'double'")
-            end
+            obj.check_validity(xbatch, "xbatch");
+            obj.check_validity(ybatch, "ybatch");
+
             if ~isscalar(minibatch_size) || ~(mod(minibatch_size, 1) == 0)
                 error("Wrong datatype of argument 'minibatch_size'. Supply minibatch size as integer scalar")
             end
