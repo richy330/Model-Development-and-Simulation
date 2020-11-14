@@ -75,8 +75,6 @@ classdef Network < handle
         end
 
         
-<<<<<<< HEAD
-=======
         function [dC_dW_backprob, dC_db_backprob, dCdW_linear, dCdB_linear] = gradient_checker(obj,x,y)
             % gradient_backprob 
             obj.layers{1}.forward(x);
@@ -101,7 +99,6 @@ classdef Network < handle
             
         end
         
->>>>>>> 0fb2ffa2a17b0c3691127ce7a7529374ad09baef
         function train(obj, xbatch, ybatch, minibatch_size, stepsize)
             % Run given batch, then update weights and biases according
             % to backpropagation
@@ -152,10 +149,6 @@ classdef Network < handle
                 for l = 2:numel(obj.layers)
                     obj.layers{l}.descend(eta_m)
                 end
-<<<<<<< HEAD
-=======
-                   
->>>>>>> 0fb2ffa2a17b0c3691127ce7a7529374ad09baef
             end % processing batch
         end % train
 
@@ -205,8 +198,7 @@ classdef Network < handle
                 end %n_layer
             end %n_run
         end
-        
-        
+         
     end % methods
 end % classdef
 
