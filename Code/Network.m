@@ -83,20 +83,20 @@ classdef Network < handle
             end
         end
         
-        
+        %
         function [y] = forward(obj, x)
             obj.check_validity(x, "forwarded Values");
             obj.layers{1}.forward(x);
             y = obj.layers{end}.a;
         end
        
-        
+        %
         function backprop(obj, y)
             obj.check_validity(y, "backpropagated Results");
             obj.layers{end}.backprop(y);
         end
 
-        
+        %
         function [dC_dW_backprob, dC_db_backprob, dCdW_linear, dCdB_linear] = gradient_checker(obj,x,y)
             % gradient_backprob 
             obj.layers{1}.forward(x);
