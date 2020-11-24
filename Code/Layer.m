@@ -82,7 +82,8 @@ classdef Layer < handle
             end
         end
         
-        %% Methods 
+        % METHODS
+        % Constructor
         function obj = Layer(n_inputs, n_neurons, activ_func)
             % CONSTRUCTOR OF CLASS LAYER
             if nargin < 3 || isempty(activ_func)
@@ -95,6 +96,7 @@ classdef Layer < handle
             obj.f_definition(activ_func); % Defines Activitation Function
         end
         
+        % Forward function
         function y = forward(obj, inputs)
             % FEEDFORWARD FOR NN 
             % Calculating activation, weighted inputs and derivations
@@ -124,6 +126,7 @@ classdef Layer < handle
             end
         end % forward
         
+        %% Backprob
         function backprop(obj, y)
             % Applying backpropagation algorithm, determining errors for
             % corresponding layer, storing error parameter 'delta'
@@ -139,12 +142,13 @@ classdef Layer < handle
             end
         end % backpropagation
         
-        
+        %% Get gradient
         function [dCdW, dCdb] = get_gradient(obj)
             dCdW = [obj.delta * obj.prev.a']';
             dCdb = sum(obj.delta, 2);
         end % get gradient
             
+        %% Descend
         function descend(obj, eta_m)
             [dCdW, dCdb] = obj.get_gradient();
             obj.W = obj.W - eta_m * dCdW;
@@ -152,7 +156,6 @@ classdef Layer < handle
         end % gradient descent
 
 
-        
         
 %% Helper functions
         function f_definition(obj, activ_func)
