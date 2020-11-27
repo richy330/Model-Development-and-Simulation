@@ -56,12 +56,7 @@ classdef Network < handle
                     f_costDer = @(a, y) a - y;
                 case "cross-entropy"
                     f_cost = @(a, y) -(sum(y*log(a) + (1-y)*log(1-a), 'all'));
-                    f_costDer = @(a, y) (a-y) ./ ((a).*(1-a));
-                %case "quadratic-L2"
-                    
-                %case "cross-entropy-L2"
-                    
-                    
+                    f_costDer = @(a, y) (a-y) ./ ((a).*(1-a)); 
             end % switch cost_func
                 
             for i = 1:numel(obj.layers)
@@ -69,6 +64,7 @@ classdef Network < handle
                 obj.layers{i}.f_costDer = f_costDer;
             end % setting costfunctions and derivatives for layers
             
+            obj.layers{end}.f_
         end % Constructor
         
         % Forward
@@ -103,18 +99,20 @@ classdef Network < handle
             end
                 
             % gradient_linear
-            [dCdW_linear, dCdB_linear] = obj.gradient_checking(x,y);
-            
+            [dCdW_linear, dCdB_linear] = obj.gradient_checking(x,y);            
         end
         
         %% Train Function
-        function train(obj, xbatch, ybatch, minibatch_size, stepsize)
+        function train(obj, xbatch, ybatch, minibatch_size, stepsize, lambda)
             % Run given batch, then update weights and biases according
             % to backpropagation
             % batch ... trainingsdata, 1st row: Input, 2nd row: Result 
             % minibatch_size... size of minibatch, recommended max = 32
             % stepsize ... size of applied adjustment between training sessions
             
+            if nargin > 4
+                lambda = 0; % basically the unregularized variant
+            end
             if ~isa(xbatch, 'double')
                 error("Wrong datatype of argument 'xbatch' passed to 'train' method in Network. Pass training data as datatype 'double'")
             end
@@ -158,7 +156,7 @@ classdef Network < handle
                 
                 % performing gradient descent on all layers
                 for l = 2:numel(obj.layers)
-                    obj.layers{l}.descend(eta_m);
+                    obj.layers{l}.descend(eta_m, lambda);
                 end
                    
             end % processing batch

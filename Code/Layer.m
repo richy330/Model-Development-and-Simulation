@@ -149,9 +149,10 @@ classdef Layer < handle
         end % get gradient
             
         %% Descend
-        function descend(obj, eta_m)
+        function descend(obj, eta_m, lambda)
             [dCdW, dCdb] = obj.get_gradient();
-            obj.W = obj.W - eta_m * dCdW;
+            obj.W = (1 - eta_m*lambda)*obj.W - eta_m * dCdW; %% L2 regularization
+            % obj.W = obj.W - eta_m * dCdW; %% no regularization
             obj.b = obj.b - eta_m * dCdb;
         end % gradient descent
 
