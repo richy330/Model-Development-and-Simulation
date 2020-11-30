@@ -1,4 +1,3 @@
-
 classdef Network < handle
     % Neural Network, consisting of Layer-objects, responsible for training
     % git test
@@ -64,21 +63,43 @@ classdef Network < handle
                 obj.layers{i}.f_costDer = f_costDer;
             end % setting costfunctions and derivatives for layers
             
-            obj.layers{end}.f_
         end % Constructor
         
-        % Forward
+
+        function check_validity(obj, values, value_name)
+            % Ckecks given values for their validity and raises apropriate
+            % error
+            nans = any(isnan(values));
+            infs = any(isinf(values));
+            oob1 = any(abs(values) > 1);
+            oob5 = any(abs(values) > 5);
+            nodouble = ~isa(values, 'double');
+            
+            if any([nans, infs])
+                error(strcat("nan "*nans, "inf "*infs, "found within ", value_name))
+            elseif oob5
+                error(strcat(value_name, " out of bounds (plus/minus 5). Try to normalize values between plus/minus 1"))
+            elseif oob1
+                warning(strcat(value_name, " out of bounds (plus/minus 1). Try to normalize values between plus/minus 1"))
+            elseif nodouble
+                error(strcat("Type Error in ", value_name, ". Expected 'double', got ", class(values), " instead"))
+            end
+        end
+        
+        
         function [y] = forward(obj, x)
+            obj.check_validity(x, "forwarded Values");
             obj.layers{1}.forward(x);
             y = obj.layers{end}.a;
         end
        
-        %% Backprob
+
         function backprop(obj, y)
+            obj.check_validity(y, "backpropagated Results");
             obj.layers{end}.backprop(y);
         end
 
-        %% Gradient Checker
+
         function [dC_dW_backprob, dC_db_backprob, dCdW_linear, dCdB_linear] = gradient_checker(obj,x,y)
             % gradient_backprob 
             obj.layers{1}.forward(x);
@@ -109,7 +130,7 @@ classdef Network < handle
             % batch ... trainingsdata, 1st row: Input, 2nd row: Result 
             % minibatch_size... size of minibatch, recommended max = 32
             % stepsize ... size of applied adjustment between training sessions
-            
+
             if nargin > 4
                 lambda = 0; % basically the unregularized variant
             end
@@ -119,6 +140,11 @@ classdef Network < handle
             if ~isa(ybatch, 'double')
                 error("Wrong datatype of argument 'ybatch' passed to 'train' method in Network. Pass training data as datatype 'double'")
             end
+
+            obj.check_validity(xbatch, "xbatch");
+            obj.check_validity(ybatch, "ybatch");
+
+
             if ~isscalar(minibatch_size) || ~(mod(minibatch_size, 1) == 0)
                 error("Wrong datatype of argument 'minibatch_size'. Supply minibatch size as integer scalar")
             end
@@ -158,7 +184,6 @@ classdef Network < handle
                 for l = 2:numel(obj.layers)
                     obj.layers{l}.descend(eta_m, lambda);
                 end
-                   
             end % processing batch
         end % train
 
@@ -209,6 +234,6 @@ classdef Network < handle
                 end %n_layer
             end %n_run
         end
-        
+
     end % methods
 end % classdef

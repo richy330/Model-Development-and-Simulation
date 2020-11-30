@@ -35,6 +35,8 @@ classdef Layer < handle
         function obj = set.W(obj, W)
             if any(isnan(W))
                 error("Weight set to nan")
+            elseif any(isinf(W))
+                error("Weight set to inf")
             elseif isnumeric(W)
                 obj.W = W;
             else
@@ -45,6 +47,8 @@ classdef Layer < handle
             [m,n] = size(b);
             if any(isnan(b))
                 error("Bias set to nan")
+            elseif any(isinf(b))
+                error("Bias set to inf")
             elseif m ~= obj.n_neurons
                 error("Bias-vector has wrong dimension")
             else
@@ -55,6 +59,8 @@ classdef Layer < handle
             [m,n] = size(a);
             if any(isnan(a))
                 error("Activation set to nan")
+            elseif any(isinf(a))
+                error("Activation set to inf")
             elseif m ~= obj.n_neurons
                 error("Activation-vector has wrong dimension")
             else
@@ -65,16 +71,34 @@ classdef Layer < handle
             [m, n] = size(z);
             if any(isnan(z))
                 error("Weighted input set to nan")
+            elseif any(isinf(z))
+                error("Weighted input set to inf")
             elseif m ~= obj.n_neurons
                 error(strcat("z has wrong number of rows. Should be [", num2str(obj.n_neurons), ", x], received [", num2str(size(z)), "]"))
             else
                 obj.z = z;
             end
         end
+        function obj = set.dsigma_dz(obj, dsigma_dz)
+            [m, n] = size(dsigma_dz);
+            if any(isnan(dsigma_dz))
+                error("dsigma_dz set to nan")
+            elseif any(isinf(dsigma_dz))
+                error("dsigma_dz set to inf")
+            elseif m ~= obj.n_neurons
+                error(strcat("dsigma_dz has wrong number of rows. Should be [", num2str(obj.n_neurons), ", x], received [", num2str(size(dsigma_dz)), "]"))
+            elseif isempty(dsigma_dz)
+                error("dsigma_dz set to empty value")
+            else
+                obj.dsigma_dz = dsigma_dz;
+            end
+        end
         function obj = set.delta(obj, delta)
             [m,n] = size(delta);
             if any(isnan(delta))
                 error("Delta set to nan")
+            elseif any(isinf(delta))
+                error("Delta set to inf")
             elseif m ~= obj.n_neurons
                 error("Delta-vector has wrong dimension")
             else
@@ -83,7 +107,7 @@ classdef Layer < handle
         end
         
         % METHODS
-        % Constructor
+        %% Constructor
         function obj = Layer(n_inputs, n_neurons, activ_func)
             % CONSTRUCTOR OF CLASS LAYER
             if nargin < 3 || isempty(activ_func)
@@ -91,12 +115,12 @@ classdef Layer < handle
             end
             obj.n_inputs = n_inputs;
             obj.n_neurons = n_neurons;
-            obj.W = randn(n_inputs, n_neurons);
+            obj.W = randn(n_inputs, n_neurons); % CHANGE
             obj.b = zeros(n_neurons, 1);
             obj.f_definition(activ_func); % Defines Activitation Function
         end
         
-        % Forward function
+        %% Forward function
         function y = forward(obj, inputs)
             % FEEDFORWARD FOR NN 
             % Calculating activation, weighted inputs and derivations
@@ -111,7 +135,7 @@ classdef Layer < handle
             
             if isempty(obj.prev) % First Layer has activation set to user-input
                 obj.a = inputs;
-                obj.dsigma_dz = obj.f_sigmaDer(obj.z);
+                % obj.dsigma_dz = obj.f_sigmaDer(obj.z);
                 obj.next.forward(obj.a); % Forwarding activation to next Layers
             else  
                 obj.z = obj.W'*inputs + obj.b;
