@@ -9,12 +9,12 @@ Propane =  PengRobinson("propane");
 
 
 %% Creating the Temperature sets
-N_trainingssets = 2000;
+N_trainingssets = 500;
 T_start = 100; 
 
-T_methane = linspace(T_start,Methane.Substance.Tc*0.99,N_trainingssets);
-T_ethane = linspace(T_start,Ethane.Substance.Tc*0.99, N_trainingssets);
-T_propane = linspace(T_start, Propane.Substance.Tc*0.99, N_trainingssets); 
+T_methane = linspace(T_start,Methane.Substance.Tc,N_trainingssets);
+T_ethane = linspace(T_start,Ethane.Substance.Tc, N_trainingssets);
+T_propane = linspace(T_start, Propane.Substance.Tc, N_trainingssets); 
 
 
 %% Creating the Trainingsdata sets
@@ -30,4 +30,3 @@ save Methane Methane
 save Ethane Ethane
 save Propane Propane
 
-randi([1,3],1,3)

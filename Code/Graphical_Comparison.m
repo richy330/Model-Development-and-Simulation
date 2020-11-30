@@ -3,8 +3,8 @@ function graphical_comparison(names, Data)
     
     P_max = Data{3}{3}.Substance.Pc;
     T_max = Data{3}{3}.Substance.Tc;
-    V_max_1 = max(Data{3}{3}.Vms(1,:));
-    V_max_2 = max(Data{3}{3}.Vms(2,:));
+    V_max_1 = max(Data{3}{3}.Vms(:,1));
+    V_max_2 = max(Data{3}{3}.Vms(:,2));
     
     for n_inputs = 1:numel(Data)
         
