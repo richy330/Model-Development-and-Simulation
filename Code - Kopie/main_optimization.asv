@@ -1,0 +1,55 @@
+% Model Simulation: Group 3
+% Main File
+
+function [optimal_stepsize, optimal_lambda] = setup_parameter(stepsize_input, lambda_input, n_runs_input, T, P, nn_data)
+%% Function Purpose:
+%  runs with the given Parameter ranges a certain amount of runs to
+%  determinte optimal starting Conditions for the Network to be trained
+%% Function Inputs:
+%   - stepsize_input ... stepsize vector to be tested
+%   - lambda_input   ... lambda vector to be tested
+%   - n_runs_input   ... number of runs 
+%   - T, P           ... normalized T and P vector
+%   - nn_data        ... structure of the neuronal network as a struct
+%                        {NN structure,act_func, cost_func}
+%% Function Output
+%   - optimal_stepsize ... best stepsize to start with
+%   - optimal_lambda   ... best lambda to start with
+
+%% Initialization of Data
+    average_error_old = inf;
+    average_error_new = 0;
+    optimal_stepsize = 0;
+    optimal_lambda = 0;
+
+%% Loop to dedicate the optimum
+    for stepsize = stepsize_input
+        for lambda = lambda_input
+            for n_runs = 1:n_runs_input
+                network = Network(nn_structure{1:end}, stepsize, lambda);
+                network.train(T,P,n_runs_input, stepsize);
+                average_error_new = mean(abs(P - network.forward(T)));
+                if average_error_old < average_error_new
+                    optimal_stepsize = stepsize;
+                    optimal_lambda = lambda;
+                end
+            end
+        end
+    end
+
+tic
+for i = 1:10
+   nn.train(T, P, 32, stepsize);
+   if mod(i,5) == 0
+       disp(string(i))
+   end
+   average_error_new = mean(abs(P - nn.forward(T)));
+   if average_error_prev < average_error_new
+       stepsize = stepsize*0.9;
+       disp(["Average Error is ", num2str(average_error_new), "old error is " num2str(average_error_prev)])
+       disp(["New stepsize is ", num2str(stepsize)])
+   end
+   average_error_prev = average_error_new;
+end
+
+end
