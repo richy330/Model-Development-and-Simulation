@@ -1,6 +1,5 @@
 % Model Simulation: Group 3
-% Function - setup parameter
-
+% Function - setup parameter _
 function [optimal_stepsize, optimal_lambda] = setup_parameter(stepsize_input, lambda_input, n_runs_input, T, P, batchsize, structure, activation, cost, name)
 
 %% Function Purpose:

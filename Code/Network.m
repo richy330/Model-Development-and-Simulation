@@ -1,6 +1,6 @@
 classdef Network < handle
     % Neural Network, consisting of Layer-objects, responsible for training
-    % git test
+    % git test _
     
     properties
         layers     

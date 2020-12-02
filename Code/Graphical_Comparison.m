@@ -1,4 +1,4 @@
-
+% _
 function graphical_comparison(names, Data)
     
     P_max = Data{3}{3}.Substance.Pc;

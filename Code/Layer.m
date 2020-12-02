@@ -115,7 +115,7 @@ classdef Layer < handle
             end
             obj.n_inputs = n_inputs;
             obj.n_neurons = n_neurons;
-            obj.W = randn(n_inputs, n_neurons); % CHANGE
+            obj.W = randn(n_inputs, n_neurons)*sqrt(1/obj.n_inputs); % CHANGE
             obj.b = zeros(n_neurons, 1);
             obj.f_definition(activ_func); % Defines Activitation Function
         end
