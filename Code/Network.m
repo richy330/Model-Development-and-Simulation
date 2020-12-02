@@ -46,10 +46,10 @@ classdef Network < handle
                 obj.n_weights = obj.n_weights + numel(layer.W);
                 obj.n_biases = obj.n_biases + numel(layer.b);
             end
-            % set proper cos functions for the layers
+            % set proper cost functions for the layers
             switch cost_func
                 case "quadratic"
-                    f_cost = @(a, y) 0.5 * sum((a-y).^2);
+                    f_cost = @(a, y) 0.5 * sum((a-y).^2, 1);
                     f_costDer = @(a, y) a - y;
                 case "cross-entropy"
                     f_cost = @(a, y) -(sum(y*log(a) + (1-y)*log(1-a), 'all'));
