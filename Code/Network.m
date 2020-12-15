@@ -13,24 +13,32 @@ classdef Network < handle
     methods
         %% Methods
         %% Constructor
-        function obj = Network(nn_structure, activ_func, cost_func)
+        function obj = Network(nn_structure, activ_func, cost_func, optimizer)
             % Constructs Neural Network, layers with neuron-count
             % determined by nn_structure
             % nn_structure ... vector that defines neurons per layer
             % activ_func   ... string that defines the activation function
             
-            if nargin < 2 || isempty(activ_func), activ_func = ""; end       
-            if ~isa(activ_func, 'string')
-                error("Wrong datatype for variable 'activ_func'. Define activation function by passing a variable of type 'string'")
+            if ~isa(activ_func, 'IActivation')
+                error([
+                    "Wrong objecttype for 'activ_func'. expected "... 
+                    "'IActivation', got ", class(activ_func), " instead"])
+            end
+            if ~isa(optimizer, 'IOptimizer')
+                error([
+                    "Wrong objecttype for 'optimizer'. expected "... 
+                    "'IOptimizer', got ", class(activ_func), " instead"])
             end
             if ~isvector(nn_structure) || ~isa(nn_structure, 'double')
-                error("Wrong datatype for variable 'nn_structure'. Define Network structure by passing a vector")
+                error([
+                    "Wrong datatype for variable 'nn_structure'. "...
+                    "Define Network structure by passing a double-vector"])
             end
             
             obj.structure = nn_structure;
             obj.layers = cell(1, numel(nn_structure));
             
-            prev_layer = Layer(nn_structure(1), nn_structure(1), activ_func);
+            prev_layer = Layer(nn_structure(1), nn_structure(1), activ_func, cost_func, optimizer);
             obj.layers{1} = prev_layer;
             
             obj.n_biases = 0;
@@ -38,7 +46,7 @@ classdef Network < handle
             
             % setting up layers
             for i = 2:numel(nn_structure)
-                layer = Layer(nn_structure(i-1), nn_structure(i), activ_func);
+                layer = Layer(nn_structure(i-1), nn_structure(i), activ_func, cost_func, optimizer);
                 
                 prev_layer.next = layer;
                 layer.prev = prev_layer;
@@ -49,20 +57,20 @@ classdef Network < handle
                 obj.n_biases = obj.n_biases + numel(layer.b);
             end
             % set proper cost functions for the layers
-            switch cost_func
-                case "quadratic"
-                    f_cost = @(a, y) 0.5 * sum((a-y).^2, 1);
-                    f_costDer = @(a, y) a - y;
-                case "cross-entropy"
-                    f_cost = @(a, y) -(sum(y*log(a) + (1-y)*log(1-a), 'all'));
-                    f_costDer = @(a, y) (a-y) ./ ((a).*(1-a)); 
-            end % switch cost_func
-                
-            for i = 1:numel(obj.layers)
-                obj.layers{i}.f_cost = f_cost;
-                obj.layers{i}.f_costDer = f_costDer;
-            end % setting costfunctions and derivatives for layers
-            
+%             switch cost_func
+%                 case "quadratic"
+%                     f_cost = @(a, y) 0.5 * sum((a-y).^2, 1);
+%                     f_costDer = @(a, y) a - y;
+%                 case "cross-entropy"
+%                     f_cost = @(a, y) -(sum(y*log(a) + (1-y)*log(1-a), 'all'));
+%                     f_costDer = @(a, y) (a-y) ./ ((a).*(1-a)); 
+%             end % switch cost_func
+%                 
+%             for i = 1:numel(obj.layers)
+%                 obj.layers{i}.f_cost = f_cost;
+%                 obj.layers{i}.f_costDer = f_costDer;
+%             end % setting costfunctions and derivatives for layers
+             
         end % Constructor
         
 
