@@ -1,15 +1,16 @@
-train_data = readtable("C:\Users\Richa\Dropbox\Studium\Model Development and Simulation\Data\methanedata.csv");
+train_data = readtable("..\Data\methanedata.csv");
 T_me = train_data.T_me';
 P_me = train_data.P_me';
 T_train = T_me/max(T_me);
 P_train = P_me/max(P_me);
 
 %%
-stepsize = 2.1;
+stepsize = 5;
 epochs = 1000;
+lambda = 0.001;
 
-nn = Network([1,4,4,1], Sigmoid, CostCrossEntropy, SGDOptimizer);
-nn.train(T_train, P_train, stepsize, epochs)
+nn = Network([1,4,4,1], ActivSigmoid, CostQuadratic, OptimizerSGD);
+nn.train(T_train, P_train, stepsize, epochs, [], lambda);
 
 
 figure

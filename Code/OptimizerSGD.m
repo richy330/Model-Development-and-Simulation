@@ -1,4 +1,4 @@
-classdef SGDOptimizer < IOptimizer
+classdef OptimizerSGD < IOptimizer
 
     methods
         %% Get gradient
@@ -12,7 +12,7 @@ classdef SGDOptimizer < IOptimizer
             [dCdW, dCdb] = obj.get_gradient(parent_layer);
             
             %obj.W = (1 - eta_m*lambda)*obj.W - eta_m * dCdW; %% L2 regularization
-            parent_layer.W = parent_layer.W - eta_m * dCdW; %% no regularization
+            parent_layer.W = (1-lambda)*parent_layer.W - eta_m * dCdW; %% no regularization
             parent_layer.b = parent_layer.b - eta_m * dCdb;
         end % gradient descent
     end

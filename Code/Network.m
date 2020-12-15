@@ -55,22 +55,7 @@ classdef Network < handle
                 
                 obj.n_weights = obj.n_weights + numel(layer.W);
                 obj.n_biases = obj.n_biases + numel(layer.b);
-            end
-            % set proper cost functions for the layers
-%             switch cost_func
-%                 case "quadratic"
-%                     f_cost = @(a, y) 0.5 * sum((a-y).^2, 1);
-%                     f_costDer = @(a, y) a - y;
-%                 case "cross-entropy"
-%                     f_cost = @(a, y) -(sum(y*log(a) + (1-y)*log(1-a), 'all'));
-%                     f_costDer = @(a, y) (a-y) ./ ((a).*(1-a)); 
-%             end % switch cost_func
-%                 
-%             for i = 1:numel(obj.layers)
-%                 obj.layers{i}.f_cost = f_cost;
-%                 obj.layers{i}.f_costDer = f_costDer;
-%             end % setting costfunctions and derivatives for layers
-             
+            end             
         end % Constructor
         
 
@@ -79,15 +64,15 @@ classdef Network < handle
             % error
             nans = any(isnan(values));
             infs = any(isinf(values));
-            oob1 = any(abs(values) > 1);
-            oob5 = any(abs(values) > 5);
+            outofbounds1 = any(abs(values) > 1);
+            outofbounds5 = any(abs(values) > 5);
             nodouble = ~isa(values, 'double');
             
             if any([nans, infs])
                 error(strcat("nan "*nans, "inf "*infs, "found within ", value_name))
-            elseif oob5
+            elseif outofbounds5
                 error(strcat(value_name, " out of bounds (plus/minus 5). Try to normalize values between plus/minus 1"))
-            elseif oob1
+            elseif outofbounds1
                 warning(strcat(value_name, " out of bounds (plus/minus 1). Try to normalize values between plus/minus 1"))
             elseif nodouble
                 error(strcat("Type Error in ", value_name, ". Expected 'double', got ", class(values), " instead"))
@@ -135,21 +120,17 @@ classdef Network < handle
         function train(obj, xbatch, ybatch, stepsize, epochs, minibatch_size, lambda, randomize)
             % Run given batch, then update weights and biases according
             % to backpropagation
-            % batch ... trainingsdata, 1st row: Input, 2nd row: Result 
-            % minibatch_size... size of minibatch, recommended max = 32
-            % stepsize ... size of applied adjustment between training sessions
-            if nargin < 8
-                randomize = true;
-            end
-            if nargin < 7
-                lambda = 0; % basically the unregularized variant
-            end
-            if nargin < 6
-                minibatch_size = 32; 
-            end
-            if nargin < 5
-                epochs = 1;
-            end
+            % xbatch... input-trainingdata, rows=input-neurons, columns=training-examples
+            % xbatch... output-trainingdata, rows=ouput-neurons, columns=training-examples            
+            % stepsize ... size of applied adjustment between training-iterations
+            % epochs ... number of repeated loops over testdata, default=1            
+            % minibatch_size... size of minibatch, default=32
+            % lambda... L2 Regularization coeeficient, default=0
+            % randomize... Boolean, training-examples will be shuffled when true, default=True
+            if nargin < 8 || isempty(randomize), randomize = true; end
+            if nargin < 7 || isempty(lambda), lambda = 0; end
+            if nargin < 6 || isempty(minibatch_size), minibatch_size = 32; end
+            if nargin < 5 || isempty(epochs), epochs = 1; end
             
             if ~isa(xbatch, 'double')
                 error("Wrong datatype of argument 'xbatch' passed to 'train' method in Network. Pass training data as datatype 'double'")

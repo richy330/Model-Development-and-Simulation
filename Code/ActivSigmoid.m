@@ -1,4 +1,4 @@
-classdef Sigmoid < IActivation
+classdef ActivSigmoid < IActivation
     %UNTITLED4 Summary of this class goes here
     %   Detailed explanation goes here
     
