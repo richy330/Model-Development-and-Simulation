@@ -1,6 +1,6 @@
 classdef Network < handle
     % Neural Network, consisting of Layer-objects, responsible for training
-    % git test
+    % git test _
     
     properties
         layers     
@@ -11,6 +11,8 @@ classdef Network < handle
     end
     
     methods
+        %% Methods
+        %% Constructor
         function obj = Network(nn_structure, activ_func, cost_func)
             % Constructs Neural Network, layers with neuron-count
             % determined by nn_structure
@@ -53,7 +55,7 @@ classdef Network < handle
                     f_costDer = @(a, y) a - y;
                 case "cross-entropy"
                     f_cost = @(a, y) -(sum(y*log(a) + (1-y)*log(1-a), 'all'));
-                    f_costDer = @(a, y) (a-y) ./ ((a).*(1-a));
+                    f_costDer = @(a, y) (a-y) ./ ((a).*(1-a)); 
             end % switch cost_func
                 
             for i = 1:numel(obj.layers)
@@ -63,6 +65,7 @@ classdef Network < handle
             
         end % Constructor
         
+
         function check_validity(obj, values, value_name)
             % Ckecks given values for their validity and raises apropriate
             % error
@@ -83,20 +86,20 @@ classdef Network < handle
             end
         end
         
-        %
+        
         function [y] = forward(obj, x)
             obj.check_validity(x, "forwarded Values");
             obj.layers{1}.forward(x);
             y = obj.layers{end}.a;
         end
        
-        %
+
         function backprop(obj, y)
             obj.check_validity(y, "backpropagated Results");
             obj.layers{end}.backprop(y);
         end
 
-        %
+
         function [dC_dW_backprob, dC_db_backprob, dCdW_linear, dCdB_linear] = gradient_checker(obj,x,y)
             % gradient_backprob 
             obj.layers{1}.forward(x);
@@ -117,19 +120,39 @@ classdef Network < handle
             end
                 
             % gradient_linear
-            [dCdW_linear, dCdB_linear] = obj.gradient_checking(x,y);
-            
+            [dCdW_linear, dCdB_linear] = obj.gradient_checking(x,y);            
         end
         
-        function train(obj, xbatch, ybatch, minibatch_size, stepsize)
+        %% Train Function
+        function train(obj, xbatch, ybatch, stepsize, epochs, minibatch_size, lambda, randomize)
             % Run given batch, then update weights and biases according
             % to backpropagation
             % batch ... trainingsdata, 1st row: Input, 2nd row: Result 
             % minibatch_size... size of minibatch, recommended max = 32
             % stepsize ... size of applied adjustment between training sessions
+            if nargin < 8
+                randomize = true;
+            end
+            if nargin < 7
+                lambda = 0; % basically the unregularized variant
+            end
+            if nargin < 6
+                minibatch_size = 32; 
+            end
+            if nargin < 5
+                epochs = 1;
+            end
             
+            if ~isa(xbatch, 'double')
+                error("Wrong datatype of argument 'xbatch' passed to 'train' method in Network. Pass training data as datatype 'double'")
+            end
+            if ~isa(ybatch, 'double')
+                error("Wrong datatype of argument 'ybatch' passed to 'train' method in Network. Pass training data as datatype 'double'")
+            end
+
             obj.check_validity(xbatch, "xbatch");
             obj.check_validity(ybatch, "ybatch");
+
 
             if ~isscalar(minibatch_size) || ~(mod(minibatch_size, 1) == 0)
                 error("Wrong datatype of argument 'minibatch_size'. Supply minibatch size as integer scalar")
@@ -138,39 +161,51 @@ classdef Network < handle
                 error("Wrong datatype of argument 'stepsize'. Supply stepsize as scalar")
             end
             
-            [mx, nx] = size(xbatch);
-            [my, ny] = size(ybatch);
-            if ~(mx == obj.layers{1}.n_neurons)
-                error("Wrong number of rows in 'xbatch' passed to function 'train'. Row-number should be equal to number of neurons in input-layer")
-            elseif ~(my == obj.layers{end}.n_neurons)
-                error("Wrong number of rows in 'ybatch' passed to function 'train'. Row-number should be equal to number of neurons in output-layer")
-            elseif nx ~= ny
-                error("Number of columns in 'xbatch' and 'ybatch' do not agree. Make sure that number of training examples agrees")
-            end
-            
-            % extracting minibatches from given examples,
-            % forward x-minibatch to set z and a,
-            % backprop y-minibatch to set delta,
-            % perform descent based on calculated deltas
-            n_minibatches = floor(nx/minibatch_size);
-            eta_m = stepsize/minibatch_size;
-            for n = 1:n_minibatches
-                minibatch_start = (n-1)*minibatch_size + 1;
-                minibatch_end = n*minibatch_size;
-                
-                x_minibatch = xbatch(:, minibatch_start:minibatch_end);
-                y_minibatch = ybatch(:, minibatch_start:minibatch_end);
-                
-                obj.forward(x_minibatch);
-                obj.backprop(y_minibatch);
-                
-                % performing gradient descent on all layers
-                for l = 2:numel(obj.layers)
-                    obj.layers{l}.descend(eta_m)
+            for epoch = 1:epochs
+
+
+                [mx, nx] = size(xbatch); % columns = trainings examples
+                [my, ny] = size(ybatch);
+                if ~(mx == obj.layers{1}.n_neurons)
+                    error("Wrong number of rows in 'xbatch' passed to function 'train'. Row-number should be equal to number of neurons in input-layer")
+                elseif ~(my == obj.layers{end}.n_neurons)
+                    error("Wrong number of rows in 'ybatch' passed to function 'train'. Row-number should be equal to number of neurons in output-layer")
+                elseif nx ~= ny
+                    error("Number of columns in 'xbatch' and 'ybatch' do not agree. Make sure that number of training examples agrees")
                 end
-            end % processing batch
+                
+                if randomize
+                    rand_perm = randperm(nx); % random numbers from 1:number of trainingsexamples
+                    xbatch = xbatch(:, rand_perm);
+                    ybatch = ybatch(:, rand_perm);
+                end
+
+                % extracting minibatches from given examples,
+                % forward x-minibatch to set z and a,
+                % backprop y-minibatch to set delta,
+                % perform descent based on calculated deltas
+                n_minibatches = floor(nx/minibatch_size);
+                eta_m = stepsize/minibatch_size;
+
+                for n = 1:n_minibatches
+                    minibatch_start = (n-1)*minibatch_size + 1;
+                    minibatch_end = n*minibatch_size;
+
+                    x_minibatch = xbatch(:, minibatch_start:minibatch_end);
+                    y_minibatch = ybatch(:, minibatch_start:minibatch_end);
+
+                    obj.forward(x_minibatch);
+                    obj.backprop(y_minibatch);
+
+                    % performing gradient descent on all layers
+                    for l = 2:numel(obj.layers)
+                        obj.layers{l}.descend(eta_m, lambda);
+                    end
+                end % processing batch
+            end %epoch-looping
         end % train
 
+        %% Gradient Checking
         function [dC_dW, dC_db] = gradient_checking(obj,x, y)
             % Global Cost Function
             cost_function = obj.layers{end}.f_cost; %(obj.layers{end}.a,y);
@@ -217,7 +252,6 @@ classdef Network < handle
                 end %n_layer
             end %n_run
         end
-         
+
     end % methods
 end % classdef
-

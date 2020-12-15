@@ -106,7 +106,8 @@ classdef Layer < handle
             end
         end
         
-        %% Methods 
+        % METHODS
+        %% Constructor
         function obj = Layer(n_inputs, n_neurons, activ_func)
             % CONSTRUCTOR OF CLASS LAYER
             if nargin < 3 || isempty(activ_func)
@@ -114,11 +115,12 @@ classdef Layer < handle
             end
             obj.n_inputs = n_inputs;
             obj.n_neurons = n_neurons;
-            obj.W = randn(n_inputs, n_neurons);
+            obj.W = randn(n_inputs, n_neurons)*sqrt(1/obj.n_inputs); % CHANGE
             obj.b = zeros(n_neurons, 1);
             obj.f_definition(activ_func); % Defines Activitation Function
         end
         
+        %% Forward function
         function y = forward(obj, inputs)
             % FEEDFORWARD FOR NN 
             % Calculating activation, weighted inputs and derivations
@@ -148,6 +150,7 @@ classdef Layer < handle
             end
         end % forward
         
+        %% Backprob
         function backprop(obj, y)
             % Applying backpropagation algorithm, determining errors for
             % corresponding layer, storing error parameter 'delta'
@@ -163,20 +166,22 @@ classdef Layer < handle
             end
         end % backpropagation
         
-        
+        %% Get gradient
         function [dCdW, dCdb] = get_gradient(obj)
             dCdW = [obj.delta * obj.prev.a']';
             dCdb = sum(obj.delta, 2);
         end % get gradient
             
-        function descend(obj, eta_m)
+        %% Descend
+        function descend(obj, eta_m, lambda)
             [dCdW, dCdb] = obj.get_gradient();
-            obj.W = obj.W - eta_m * dCdW;
+            
+            %obj.W = (1 - eta_m*lambda)*obj.W - eta_m * dCdW; %% L2 regularization
+            obj.W = obj.W - eta_m * dCdW; %% no regularization
             obj.b = obj.b - eta_m * dCdb;
         end % gradient descent
 
 
-        
         
 %% Helper functions
         function f_definition(obj, activ_func)
