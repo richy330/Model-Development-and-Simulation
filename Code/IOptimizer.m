@@ -1,4 +1,4 @@
-classdef IOptimizer  
+classdef IOptimizer < handle
     
     % Abstract Class providing Optimizer-Interface
 
