@@ -11,40 +11,36 @@ classdef Network < handle
     end
     
     methods
-        %% Methods
         %% Constructor
         function obj = Network(nn_structure, activ_func, cost_func, optimizer)
             % Constructs Neural Network, layers with neuron-count
             % determined by nn_structure
             % nn_structure ... vector that defines neurons per layer
-            % activ_func   ... string that defines the activation function
+            % activ_func   ... IActiv object, providing activation function
+            % cost_func    ... ICost object, providing cost function
+            % optimizer    ... IOptimizer object, providing training capabilities
             
             if ~isa(activ_func, 'IActivation')
-                error([
-                    "Wrong objecttype for 'activ_func'. expected "... 
-                    "'IActivation', got ", class(activ_func), " instead"])
+                error(["Wrong objecttype for 'activ_func'. expected 'IActivation', got ", class(activ_func), " instead"])
+            end
+            if ~isa(cost_func, 'ICost')
+                error(["Wrong objecttype for 'cost_func'. expected 'ICost', got ", class(cost_func), " instead"])
             end
             if ~isa(optimizer, 'IOptimizer')
-                error([
-                    "Wrong objecttype for 'optimizer'. expected "... 
-                    "'IOptimizer', got ", class(activ_func), " instead"])
+                error(["Wrong objecttype for 'optimizer'. expected 'IOptimizer', got ", class(optimizer), " instead"])
             end
             if ~isvector(nn_structure) || ~isa(nn_structure, 'double')
-                error([
-                    "Wrong datatype for variable 'nn_structure'. "...
-                    "Define Network structure by passing a double-vector"])
+                error(["Wrong datatype for variable 'nn_structure'. Define Network structure by passing a double-vector"])
             end
             
             obj.structure = nn_structure;
             obj.layers = cell(1, numel(nn_structure));
             
+            % setting up layers
             prev_layer = Layer(nn_structure(1), nn_structure(1), activ_func, cost_func, optimizer);
             obj.layers{1} = prev_layer;
-            
             obj.n_biases = 0;
             obj.n_weights = 0;
-            
-            % setting up layers
             for i = 2:numel(nn_structure)
                 layer = Layer(nn_structure(i-1), nn_structure(i), activ_func, cost_func, optimizer);
                 
@@ -58,28 +54,7 @@ classdef Network < handle
             end             
         end % Constructor
         
-
-        function check_validity(obj, values, value_name)
-            % Ckecks given values for their validity and raises apropriate
-            % error
-            nans = any(isnan(values));
-            infs = any(isinf(values));
-            outofbounds1 = any(abs(values) > 1);
-            outofbounds5 = any(abs(values) > 5);
-            nodouble = ~isa(values, 'double');
-            
-            if any([nans, infs])
-                error(strcat("nan "*nans, "inf "*infs, "found within ", value_name))
-            elseif outofbounds5
-                error(strcat(value_name, " out of bounds (plus/minus 5). Try to normalize values between plus/minus 1"))
-            elseif outofbounds1
-                warning(strcat(value_name, " out of bounds (plus/minus 1). Try to normalize values between plus/minus 1"))
-            elseif nodouble
-                error(strcat("Type Error in ", value_name, ". Expected 'double', got ", class(values), " instead"))
-            end
-        end
-        
-        
+        %% Forwarding and Backpropagation
         function [y] = forward(obj, x)
             obj.check_validity(x, "forwarded Values");
             obj.layers{1}.forward(x);
@@ -91,8 +66,83 @@ classdef Network < handle
             obj.check_validity(y, "backpropagated Results");
             obj.layers{end}.backprop(y);
         end
+        
+        %% Training
+        function train(obj, xbatch, ybatch, stepsize, epochs, minibatch_size, lambda, randomize)
+            % Run given batch, then update weights and biases according
+            % to backpropagation
+            % xbatch... input-trainingdata, rows=input-neurons, columns=training-examples
+            % xbatch... output-trainingdata, rows=ouput-neurons, columns=training-examples            
+            % stepsize ... size of applied adjustment between training-iterations
+            % epochs ... number of repeated loops over testdata, default=1            
+            % minibatch_size... size of minibatch, default=32
+            % lambda... L2 Regularization coeeficient, default=0
+            % randomize... Boolean, training-examples will be shuffled when true, default=True
+            if nargin < 8 || isempty(randomize), randomize = true; end
+            if nargin < 7 || isempty(lambda), lambda = 0; end
+            if nargin < 6 || isempty(minibatch_size), minibatch_size = 32; end
+            if nargin < 5 || isempty(epochs), epochs = 1; end
+            
+            if ~isa(xbatch, 'double')
+                error("Wrong datatype of argument 'xbatch' passed to 'train' method in Network. Pass training data as datatype 'double'")
+            end
+            if ~isa(ybatch, 'double')
+                error("Wrong datatype of argument 'ybatch' passed to 'train' method in Network. Pass training data as datatype 'double'")
+            end
+            obj.check_validity(xbatch, "xbatch");
+            obj.check_validity(ybatch, "ybatch");
+            
+            if ~isscalar(minibatch_size) || ~(mod(minibatch_size, 1) == 0)
+                error("Wrong datatype of argument 'minibatch_size'. Supply minibatch size as integer scalar")
+            end
+            if ~isscalar(stepsize)
+                error("Wrong datatype of argument 'stepsize'. Supply stepsize as scalar")
+            end
+            
+            for epoch = 1:epochs
+                [mx, nx] = size(xbatch); % columns = trainings examples
+                [my, ny] = size(ybatch);
+                if ~(mx == obj.layers{1}.n_neurons)
+                    error("Wrong number of rows in 'xbatch' passed to function 'train'. Row-number should be equal to number of neurons in input-layer")
+                elseif ~(my == obj.layers{end}.n_neurons)
+                    error("Wrong number of rows in 'ybatch' passed to function 'train'. Row-number should be equal to number of neurons in output-layer")
+                elseif nx ~= ny
+                    error("Number of columns in 'xbatch' and 'ybatch' do not agree. Make sure that number of training examples agrees")
+                end
+                
+                if randomize
+                    rand_perm = randperm(nx); % random numbers from 1:number of trainingsexamples
+                    xbatch = xbatch(:, rand_perm);
+                    ybatch = ybatch(:, rand_perm);
+                end
+                % extracting minibatches from given examples,
+                % forward x-minibatch to set z and a,
+                % backprop y-minibatch to set delta,
+                % perform descent based on calculated deltas
+                n_minibatches = floor(nx/minibatch_size);
+                eta_m = stepsize/minibatch_size;
+                for n = 1:n_minibatches
+                    minibatch_start = (n-1)*minibatch_size + 1;
+                    minibatch_end = n*minibatch_size;
 
+                    x_minibatch = xbatch(:, minibatch_start:minibatch_end);
+                    y_minibatch = ybatch(:, minibatch_start:minibatch_end);
 
+                    obj.forward(x_minibatch);
+                    obj.backprop(y_minibatch);
+
+                    % performing gradient descent on all layers
+                    for l = 2:numel(obj.layers)
+                        obj.layers{l}.descend(eta_m, lambda);
+                    end
+                end % processing batch
+            end %epoch-looping
+        end % train
+        
+        
+        
+
+%% TODO clean both gradient checkers, outsource to gradientchecker class 
         function [dC_dW_backprob, dC_db_backprob, dCdW_linear, dCdB_linear] = gradient_checker(obj,x,y)
             % gradient_backprob 
             obj.layers{1}.forward(x);
@@ -115,86 +165,7 @@ classdef Network < handle
             % gradient_linear
             [dCdW_linear, dCdB_linear] = obj.gradient_checking(x,y);            
         end
-        
-        %% Train Function
-        function train(obj, xbatch, ybatch, stepsize, epochs, minibatch_size, lambda, randomize)
-            % Run given batch, then update weights and biases according
-            % to backpropagation
-            % xbatch... input-trainingdata, rows=input-neurons, columns=training-examples
-            % xbatch... output-trainingdata, rows=ouput-neurons, columns=training-examples            
-            % stepsize ... size of applied adjustment between training-iterations
-            % epochs ... number of repeated loops over testdata, default=1            
-            % minibatch_size... size of minibatch, default=32
-            % lambda... L2 Regularization coeeficient, default=0
-            % randomize... Boolean, training-examples will be shuffled when true, default=True
-            if nargin < 8 || isempty(randomize), randomize = true; end
-            if nargin < 7 || isempty(lambda), lambda = 0; end
-            if nargin < 6 || isempty(minibatch_size), minibatch_size = 32; end
-            if nargin < 5 || isempty(epochs), epochs = 1; end
-            
-            if ~isa(xbatch, 'double')
-                error("Wrong datatype of argument 'xbatch' passed to 'train' method in Network. Pass training data as datatype 'double'")
-            end
-            if ~isa(ybatch, 'double')
-                error("Wrong datatype of argument 'ybatch' passed to 'train' method in Network. Pass training data as datatype 'double'")
-            end
 
-            obj.check_validity(xbatch, "xbatch");
-            obj.check_validity(ybatch, "ybatch");
-
-
-            if ~isscalar(minibatch_size) || ~(mod(minibatch_size, 1) == 0)
-                error("Wrong datatype of argument 'minibatch_size'. Supply minibatch size as integer scalar")
-            end
-            if ~isscalar(stepsize)
-                error("Wrong datatype of argument 'stepsize'. Supply stepsize as scalar")
-            end
-            
-            for epoch = 1:epochs
-
-
-                [mx, nx] = size(xbatch); % columns = trainings examples
-                [my, ny] = size(ybatch);
-                if ~(mx == obj.layers{1}.n_neurons)
-                    error("Wrong number of rows in 'xbatch' passed to function 'train'. Row-number should be equal to number of neurons in input-layer")
-                elseif ~(my == obj.layers{end}.n_neurons)
-                    error("Wrong number of rows in 'ybatch' passed to function 'train'. Row-number should be equal to number of neurons in output-layer")
-                elseif nx ~= ny
-                    error("Number of columns in 'xbatch' and 'ybatch' do not agree. Make sure that number of training examples agrees")
-                end
-                
-                if randomize
-                    rand_perm = randperm(nx); % random numbers from 1:number of trainingsexamples
-                    xbatch = xbatch(:, rand_perm);
-                    ybatch = ybatch(:, rand_perm);
-                end
-
-                % extracting minibatches from given examples,
-                % forward x-minibatch to set z and a,
-                % backprop y-minibatch to set delta,
-                % perform descent based on calculated deltas
-                n_minibatches = floor(nx/minibatch_size);
-                eta_m = stepsize/minibatch_size;
-
-                for n = 1:n_minibatches
-                    minibatch_start = (n-1)*minibatch_size + 1;
-                    minibatch_end = n*minibatch_size;
-
-                    x_minibatch = xbatch(:, minibatch_start:minibatch_end);
-                    y_minibatch = ybatch(:, minibatch_start:minibatch_end);
-
-                    obj.forward(x_minibatch);
-                    obj.backprop(y_minibatch);
-
-                    % performing gradient descent on all layers
-                    for l = 2:numel(obj.layers)
-                        obj.layers{l}.descend(eta_m, lambda);
-                    end
-                end % processing batch
-            end %epoch-looping
-        end % train
-
-        %% Gradient Checking
         function [dC_dW, dC_db] = gradient_checking(obj,x, y)
             % Global Cost Function
             cost_function = obj.layers{end}.f_cost; %(obj.layers{end}.a,y);
@@ -240,6 +211,27 @@ classdef Network < handle
                     end 
                 end %n_layer
             end %n_run
+        end %gradient checking
+        
+
+        function check_validity(obj, values, value_name)
+            % Ckecks given values for their validity and raises apropriate
+            % error
+            nans = any(isnan(values));
+            infs = any(isinf(values));
+            outofbounds1 = any(abs(values) > 1);
+            outofbounds5 = any(abs(values) > 5);
+            nodouble = ~isa(values, 'double');
+            
+            if any([nans, infs])
+                error(strcat("nan "*nans, "inf "*infs, "found within ", value_name))
+            elseif outofbounds5
+                error(strcat(value_name, " out of bounds (plus/minus 5). Try to normalize values between plus/minus 1"))
+            elseif outofbounds1
+                warning(strcat(value_name, " out of bounds (plus/minus 1). Try to normalize values between plus/minus 1"))
+            elseif nodouble
+                error(strcat("Type Error in ", value_name, ". Expected 'double', got ", class(values), " instead"))
+            end
         end
 
     end % methods
