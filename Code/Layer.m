@@ -4,21 +4,20 @@
 classdef Layer < handle
     % Setting up a neuron-layer, given the number of incoming
     % neurons/inputs, number of neurons in the layer itself and the desired
-    % activation function, passed by string. If no/empty string or empty
-    % argument is given, output will be set unchanged -> a = f(z) = z.
+    % activation function, cost function and optimizer.
     % Weights are initiated randomly, biases are initially 0
     
     properties
-        % PROPERTIES OF CLASS LAYER
         % Variables:
         a {mustBeFinite, mustBeReal, mustBeNumeric}                        % activation = activ_func(z)
-        W {mustBeFinite, mustBeReal, mustBeNumeric}                        % weight-matrix
         b {mustBeFinite, mustBeReal, mustBeNumeric}
-        z {mustBeFinite, mustBeReal, mustBeNumeric}                        % weighted input
+        z {mustBeFinite, mustBeReal, mustBeNumeric}                        % weighted input        
+        W {mustBeFinite, mustBeReal, mustBeNumeric}                        % weight-matrix
         dsigma_dz {mustBeFinite, mustBeReal, mustBeNumeric}                % gradient of sigma function with respect to z
         delta {mustBeFinite, mustBeReal, mustBeNumeric}                    % error-vector
-        n_inputs {mustBeFinite, mustBeInteger}
+        n_inputs {mustBeFinite, mustBeInteger}                             % n_neurons from prev layer
         n_neurons {mustBeFinite, mustBeInteger}
+        uuid
         % Functions:
         activ_func
         cost_func
@@ -30,44 +29,6 @@ classdef Layer < handle
     
 
     methods
-        %% Setter functions
-        function set.b(obj, b)
-            [m,n] = size(b);
-            if m ~= obj.n_neurons
-                error("Bias-vector has wrong dimension")
-            end
-            obj.b = b;
-        end
-        function set.a(obj, a)
-            [m,n] = size(a);
-            if m ~= obj.n_neurons
-                error(["a has wrong number of rows. Should be ", num2str(obj.n_neurons), ", received ", num2str(m)])
-            end
-            obj.a = a;
-        end
-        function set.z(obj, z)
-            [m, n] = size(z);
-            if m ~= obj.n_neurons
-                error(["z has wrong number of rows. Should be ", num2str(obj.n_neurons), ", received ", num2str(m)])
-            end
-            obj.z = z;
-        end
-        function set.dsigma_dz(obj, dsigma_dz)
-            [m, n] = size(dsigma_dz);
-            if m ~= obj.n_neurons
-                error(["dsigma_dz has wrong number of rows. Should be ", num2str(obj.n_neurons), ", received ", num2str(m)])
-            end
-            obj.dsigma_dz = dsigma_dz;
-        end
-        function set.delta(obj, delta)
-            [m, n] = size(delta);
-            if m ~= obj.n_neurons
-                error(["delta has wrong number of rows. Should be ", num2str(obj.n_neurons), ", received ", num2str(m)])
-            end
-            obj.delta = delta;
-        end
-        
-        % METHODS
         %% Constructor
         function obj = Layer(n_inputs, n_neurons, activ_func, cost_func, optimizer)
             % CONSTRUCTOR OF CLASS LAYER
@@ -75,6 +36,7 @@ classdef Layer < handle
             obj.n_neurons = n_neurons;
             obj.W = randn(n_inputs, n_neurons)*sqrt(1/obj.n_inputs);
             obj.b = zeros(n_neurons, 1);
+            obj.uuid = randi([2^51, 2^52-1]);
             obj.activ_func = activ_func;
             obj.optimizer = optimizer;
             obj.cost_func = cost_func;
@@ -103,7 +65,7 @@ classdef Layer < handle
                 if ~isempty(obj.next) % forward whenever there are next layers
                     obj.next.forward(obj.a);
                 else
-                    y = obj.a; % NEW TEST!
+                    y = obj.a;
                     return % if last Layer - Stop forward
                 end
             end
@@ -131,6 +93,44 @@ classdef Layer < handle
             % on obj
             obj.optimizer.descend(obj, eta_m, lambda)
         end
-
+        
+        
+        
+        %% Setter functions
+        function set.b(obj, b)
+            [m,n] = size(b);
+            if m ~= obj.n_neurons
+                error(['b has wrong number of rows. Should be ', num2str(obj.n_neurons), ', received ', num2str(m)])
+            end
+            obj.b = b;
+        end
+        function set.a(obj, a)
+            [m,n] = size(a);
+            if m ~= obj.n_neurons
+                error(['a has wrong number of rows. Should be ', num2str(obj.n_neurons), ', received ', num2str(m)])
+            end
+            obj.a = a;
+        end
+        function set.z(obj, z)
+            [m, n] = size(z);
+            if m ~= obj.n_neurons
+                error(["z has wrong number of rows. Should be ", num2str(obj.n_neurons), ", received ", num2str(m)])
+            end
+            obj.z = z;
+        end
+        function set.dsigma_dz(obj, dsigma_dz)
+            [m, n] = size(dsigma_dz);
+            if m ~= obj.n_neurons
+                error(["dsigma_dz has wrong number of rows. Should be ", num2str(obj.n_neurons), ", received ", num2str(m)])
+            end
+            obj.dsigma_dz = dsigma_dz;
+        end
+        function set.delta(obj, delta)
+            [m, n] = size(delta);
+            if m ~= obj.n_neurons
+                error(["delta has wrong number of rows. Should be ", num2str(obj.n_neurons), ", received ", num2str(m)])
+            end
+            obj.delta = delta;
+        end
     end % methods
 end % classdef
