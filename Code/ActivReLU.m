@@ -1,7 +1,4 @@
 classdef ActivReLU < IActivation
-    %UNTITLED4 Summary of this class goes here
-    %   Detailed explanation goes here
-    
     
     methods
         function [activation] = a(obj, z)

@@ -1,4 +1,4 @@
-classdef OptimizerSGD < IOptimizer
+classdef OptimizerSGD < IOptimizer & matlab.mixin.Copyable
 
     methods
         %% Get gradient
