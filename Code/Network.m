@@ -6,8 +6,12 @@ classdef Network < handle
         layers     
         structure
         n_weights
-        n_biases 
+        n_biases
+        total_epochs
+        hyperparams_ = struct()
+        hyperparams
         Cb
+        monitor
     end
     
     methods
@@ -35,14 +39,17 @@ classdef Network < handle
             
             obj.structure = nn_structure;
             obj.layers = cell(1, numel(nn_structure));
+            obj.total_epochs = 1;
             
-            % setting up layers
-            prev_layer = Layer(nn_structure(1), nn_structure(1), activ_func, cost_func, optimizer);
+            % setting up layers, copy(optimizer) needed to provide unique
+            % optimizer for every layer, not a handle to the same optimizer
+            prev_layer = Layer(nn_structure(1), nn_structure(1), activ_func, cost_func, copy(optimizer));
             obj.layers{1} = prev_layer;
             obj.n_biases = 0;
             obj.n_weights = 0;
+            
             for i = 2:numel(nn_structure)
-                layer = Layer(nn_structure(i-1), nn_structure(i), activ_func, cost_func, optimizer);
+                layer = Layer(nn_structure(i-1), nn_structure(i), activ_func, cost_func, copy(optimizer));
                 
                 prev_layer.next = layer;
                 layer.prev = prev_layer;
@@ -51,7 +58,8 @@ classdef Network < handle
                 
                 obj.n_weights = obj.n_weights + numel(layer.W);
                 obj.n_biases = obj.n_biases + numel(layer.b);
-            end             
+            end
+            %obj.layers{end}.activ_func = ActivReLULeaky;
         end % Constructor
         
         %% Forwarding and Backpropagation
@@ -68,12 +76,12 @@ classdef Network < handle
         end
         
         %% Training
-        function train(obj, xbatch, ybatch, stepsize, epochs, minibatch_size, lambda, randomize)
+        function train(obj, xbatch, ybatch, learning_rate, epochs, minibatch_size, lambda, randomize)
             % Run given batch, then update weights and biases according
             % to backpropagation
             % xbatch... input-trainingdata, rows=input-neurons, columns=training-examples
             % xbatch... output-trainingdata, rows=ouput-neurons, columns=training-examples            
-            % stepsize ... size of applied adjustment between training-iterations
+            % learning_rate ... size of applied adjustment between training-iterations
             % epochs ... number of repeated loops over testdata, default=1            
             % minibatch_size... size of minibatch, default=32
             % lambda... L2 Regularization coeeficient, default=0
@@ -95,10 +103,14 @@ classdef Network < handle
             if ~isscalar(minibatch_size) || ~(mod(minibatch_size, 1) == 0)
                 error("Wrong datatype of argument 'minibatch_size'. Supply minibatch size as integer scalar")
             end
-            if ~isscalar(stepsize)
-                error("Wrong datatype of argument 'stepsize'. Supply stepsize as scalar")
+            if ~isscalar(learning_rate)
+                error("Wrong datatype of argument 'learning_rate'. Supply learning_rate as scalar")
             end
             
+            obj.hyperparams.learning_rate = learning_rate;
+            
+            
+            tic;
             for epoch = 1:epochs
                 [mx, nx] = size(xbatch); % columns = trainings examples
                 [my, ny] = size(ybatch);
@@ -120,7 +132,7 @@ classdef Network < handle
                 % backprop y-minibatch to set delta,
                 % perform descent based on calculated deltas
                 n_minibatches = floor(nx/minibatch_size);
-                eta_m = stepsize/minibatch_size;
+                eta_m = learning_rate/minibatch_size;
                 for n = 1:n_minibatches
                     minibatch_start = (n-1)*minibatch_size + 1;
                     minibatch_end = n*minibatch_size;
@@ -136,6 +148,20 @@ classdef Network < handle
                         obj.layers{l}.descend(eta_m, lambda);
                     end
                 end % processing batch
+                
+                obj.total_epochs = obj.total_epochs + 1;
+                progress = 100*epoch/epochs;
+                delta_t = toc;
+                
+                if mod(progress, 1) == 0
+                    msg = ['Progress: ', num2str(progress), ...
+                           '%. Remaining Time: ', num2str((delta_t/epoch)*(epochs-epoch))];
+                    disp(msg)
+                end
+                if ~isempty(obj.monitor)
+                    obj.monitor.monitor(obj);
+                end
+                
             end %epoch-looping
         end % train
         
@@ -227,10 +253,21 @@ classdef Network < handle
                 error(strcat("nan "*nans, "inf "*infs, "found within ", value_name))
             elseif outofbounds5
                 error(strcat(value_name, " out of bounds (plus/minus 5). Try to normalize values between plus/minus 1"))
-            elseif outofbounds1
-                warning(strcat(value_name, " out of bounds (plus/minus 1). Try to normalize values between plus/minus 1"))
+%             elseif outofbounds1
+%                 warning(strcat(value_name, " out of bounds (plus/minus 1). Try to normalize values between plus/minus 1"))
             elseif nodouble
                 error(strcat("Type Error in ", value_name, ". Expected 'double', got ", class(values), " instead"))
+            end
+        end
+        
+        
+        %% Getters and Setter
+        
+        function p = get.hyperparams(obj)
+            if isempty(obj.layers{1}.optimizer)
+                p = obj.hyperparams_;
+            else
+                p = mergestructs(obj.hyperparams, obj.layers{1}.optimizer.hyperparams);
             end
         end
 
