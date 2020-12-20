@@ -4,15 +4,15 @@ classdef OptimizerSGDMomentum < IOptimizer & handle & matlab.mixin.Copyable
         beta
         dCdW_mom
         dCdb_mom
-        hyperparams = struct('Optimizer', 'SGD')
+        hyperparams = struct('Optimizer', 'SGD Momentum')
     end
     
     methods
         %% Constructor
         function obj = OptimizerSGDMomentum(beta)
-            obj.beta = beta;
             obj.dCdW_mom = 0;
             obj.dCdb_mom = 0;
+            obj.beta = beta;
             obj.hyperparams.beta = beta;
         end
         

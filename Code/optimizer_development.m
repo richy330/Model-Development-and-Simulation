@@ -35,4 +35,3 @@ lambda = 0.00;
 tic
 nn.train(T_train, P_train, learning_rate, epochs, [], lambda);
 toc
-
