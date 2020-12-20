@@ -2,13 +2,15 @@
 % Main File
 
 %% Code
-%% Loading of Data to run
+% Loading of Data to run
 load Methane.mat
 load Ethane.mat
 load Propane.mat
+load Butane.mat
+load Pentane.mat
+load Hexane.mat
 
-
-%% Setup trainingsdata
+% Setup trainingsdata
 
 [~, N_coloumns_Methane] = size(Methane.Ts');
 [~, N_coloumns_Ethane] = size(Ethane.Ts');
@@ -17,8 +19,8 @@ load Propane.mat
 % Norm Factors P/V/T
 T_max = Propane.Substance.Tc;
 P_max = Propane.Substance.Pc;
-V_max_1 = max(Propane.Vms(1,:));
-V_max_2 = max(Propane.Vms(2,:));
+V_max_1 = max(Propane.Vms(:,1));
+V_max_2 = max(Propane.Vms(:,2));
 
 % Norm for Antoine
 x_1 = 10;
@@ -31,6 +33,8 @@ Input_Propane = [ Propane.Ts'/T_max;  repmat([Propane.Substance.antoine_A/x_1;  
 
 Input = [Input_Methane, Input_Ethane, Input_Propane];
 
+
+
 Results_Methane = [Methane.Ps'/P_max; Methane.Vms'./[V_max_1; V_max_2]];
 Results_Ethane = [Ethane.Ps'/P_max; Ethane.Vms'./[V_max_1; V_max_2]];
 Results_Propane = [Propane.Ps'/P_max; Propane.Vms'./[V_max_1; V_max_2]];
@@ -39,24 +43,24 @@ Results = [Results_Methane, Results_Ethane, Results_Propane];
 
 Data = {{Input_Methane, Results_Methane, Methane}, {Input_Ethane, Results_Ethane, Ethane}, {Input_Propane, Results_Propane, Propane}};
 
-%% Setting up the NN to train
-nn = Network([2,150,300,150,3],"sigmoid", "cross-entropy");
+% Setting up the NN to train
+nn = Network([5,30,40,40,3],"sigmoid", "cross-entropy");
 
 disp("--------------------------------NEW RUN--------------------------------")
 
 %load("NN-experiment-2")
 
-%% Chance of which parameters to use
+% Chance of which parameters to use
 lambda = 0.0;
-stepsize = 0.1;
+stepsize = 3;
 limit = 15;
 counter = inf;
 average_error_prev = 0;
 factor = 0.95;
 
 tic
-for run = 1:700
-   nn.train(Input_Methane, Results_Methane, 32, stepsize);
+for run = 1:100
+   nn.train(Input, Results, 32, stepsize);
    average_error_new = mean(sum(abs(Results - nn.forward(Input)),1));
    
    if mod(run,50) == 0
@@ -78,9 +82,14 @@ for run = 1:700
 end
 toc
 
-
+plot(Propane.Ts, Propane.Vms)
 
 Name = "NN-experiment-2";
 save(Name, "nn");
+
+r = 100;
+
+%nn.gradient_checking(Input(:,r), Results(:,r))
+
 
 Graphical_Comparison({Name}, Data)

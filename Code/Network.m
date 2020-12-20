@@ -54,7 +54,7 @@ classdef Network < handle
                     f_cost = @(a, y) 0.5 * sum((a-y).^2);
                     f_costDer = @(a, y) a - y;
                 case "cross-entropy"
-                    f_cost = @(a, y) -(sum(y*log(a) + (1-y)*log(1-a), 'all'));
+                    f_cost = @(a, y) -(sum(y.*log(a) + (1-y).*log(1-a), 'all'));
                     f_costDer = @(a, y) (a-y) ./ ((a).*(1-a)); 
             end % switch cost_func
                 
@@ -131,7 +131,7 @@ classdef Network < handle
             % minibatch_size... size of minibatch, recommended max = 32
             % stepsize ... size of applied adjustment between training sessions
 
-            if nargin > 4
+            if nargin < 6
                 lambda = 0; % basically the unregularized variant
             end
             if ~isa(xbatch, 'double')
@@ -197,10 +197,6 @@ classdef Network < handle
             C_plus = 0; % Cost term for C + e 
             C_minus = 0; % Cost term for C - e
             e = 10^-4; % factor for approximation of cost
-            
-            for n_run = 1:numel(x) %atthe moment necessarily 
-                x_run = x(n_run);
-                y_run = y(n_run);
                 
                 for n_layer = numel(obj.layers):-1:2
                     W = obj.layers{n_layer}.W;
@@ -210,10 +206,10 @@ classdef Network < handle
                         for row_W = 1:size(W,1)
                             %Calculate Error with positive Change
                             obj.layers{n_layer}.W(row_W, column_W) = W(row_W, column_W) + e;
-                            C_plus = cost_function(obj.forward(x_run), y_run);
+                            C_plus = cost_function(obj.forward(x), y);
                             % Calculate Error with negative Change
                             obj.layers{n_layer}.W(row_W, column_W) = W(row_W, column_W) - e;
-                            C_minus = cost_function(obj.forward(x_run), y_run);
+                            C_minus = cost_function(obj.forward(x), y);
                             % Estimation of Gradient:
                             dC_dW = [dC_dW, (C_plus - C_minus)/(2*e)];
                             % Reinitialize W data for next run:
@@ -223,17 +219,16 @@ classdef Network < handle
                     % Calculation of dC_db
                     for column_b = 1:numel(b) 
                         obj.layers{n_layer}.b(column_b) = b(column_b) + e;
-                        C_plus = cost_function(obj.forward(x_run), y_run) ;
+                        C_plus = cost_function(obj.forward(x), y) ;
 
                         obj.layers{n_layer}.b(column_b) = b(column_b) - e;
-                        C_minus = cost_function(obj.forward(x_run), y_run);
+                        C_minus = cost_function(obj.forward(x), y);
 
                         dC_db = [dC_db, (C_plus - C_minus)/(2*e)];
                         obj.layers{n_layer}.b(column_b) = b(column_b);
                     end 
                 end %n_layer
-            end %n_run
-        end
+         end %n_run
 
     end % methods
 end % classdef
