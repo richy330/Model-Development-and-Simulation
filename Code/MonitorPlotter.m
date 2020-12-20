@@ -6,10 +6,13 @@ classdef MonitorPlotter < handle
         plotting_rel_deviation = false
         plotting_abs_deviation = false
         plotting_benchmark = false
+        plotting_cost = false
         benchmark_xdata
         benchmark_ydata
         x_normalization
         y_normalization
+        costs
+        epochs
     end
     
     properties(Access = private)
@@ -26,11 +29,12 @@ classdef MonitorPlotter < handle
         %% Monitor calling Plots
         function monitor(obj, parent_network)
             epoch = parent_network.total_epochs;
-            hyperparams = parent_network.hyperparams;
+            obj.costs = [obj.costs, parent_network.cost];
+            obj.epochs = [obj.epochs, epoch];
             if mod(epoch, obj.plot_intervall) ~= 0
                 return
             end
-                
+
             benchmark_x = obj.benchmark_xdata;
             benchmark_y = obj.benchmark_ydata;
             y_nn = parent_network.forward(benchmark_x);
@@ -46,6 +50,7 @@ classdef MonitorPlotter < handle
             delta_y_abs = y_nn-benchmark_y;
             delta_y_rel = delta_y_abs ./ benchmark_y * 100;
             
+            hyperparams = parent_network.hyperparams;
             if obj.plotting_rel_deviation
                 obj.plot_rel_dev(benchmark_x, delta_y_rel, hyperparams, epoch);
             end
@@ -54,6 +59,9 @@ classdef MonitorPlotter < handle
             end
             if obj.plotting_benchmark
                 obj.plot_benchmark(benchmark_x, benchmark_y, y_nn, hyperparams, epoch);
+            end
+            if obj.plotting_cost
+                obj.plot_cost(hyperparams, epoch)
             end
         end
         
@@ -68,6 +76,7 @@ classdef MonitorPlotter < handle
             title(['Relative Deviation Peng Robinson vs Neural Net' newline...
                 'epochs=', num2str(epoch)])
             annotation('textbox', 'Position', obj.annotation_pos, 'String', obj.get_paramstring(hyperparams), 'FitBoxToText','on');
+            drawnow;
         end
         function plot_abs_dev(obj, x, abs_y_dev, hyperparams, epoch)
             figure
@@ -79,6 +88,7 @@ classdef MonitorPlotter < handle
             title(['Total Deviation Peng Robinson vs Neural Net' newline...
                 'epochs=', num2str(epoch)])
             annotation('textbox', 'Position', obj.annotation_pos, 'String', obj.get_paramstring(hyperparams), 'FitBoxToText','on');
+            drawnow;
         end
         function plot_benchmark(obj, x, y_bench, y_nn, hyperparams, epoch)
             figure
@@ -93,6 +103,20 @@ classdef MonitorPlotter < handle
             title(['Peng Robinson vs Neural Net' newline...
                 'epochs=', num2str(epoch)])
             annotation('textbox', 'Position', obj.annotation_pos, 'String', obj.get_paramstring(hyperparams), 'FitBoxToText','on');
+            drawnow;
+        end
+        function plot_cost(obj, hyperparams, epoch)
+            figure
+            plot(obj.epochs, obj.costs)
+            
+            legend("Cost")
+            ylabel("Cost")
+            xlabel("Epochs")
+            ylim([0,30])
+            title(['Peng Robinson vs Neural Net' newline...
+                'epochs=', num2str(epoch)])
+            annotation('textbox', 'Position', obj.annotation_pos, 'String', obj.get_paramstring(hyperparams), 'FitBoxToText','on');
+            drawnow;
         end
         
         
