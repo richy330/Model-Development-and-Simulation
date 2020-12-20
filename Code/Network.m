@@ -10,7 +10,7 @@ classdef Network < handle
         total_epochs
         hyperparams_ = struct()
         hyperparams
-        Cb
+        cost
         monitor
     end
     
@@ -107,7 +107,7 @@ classdef Network < handle
                 error("Wrong datatype of argument 'learning_rate'. Supply learning_rate as scalar")
             end
             
-            obj.hyperparams.learning_rate = learning_rate;
+            obj.hyperparams_.learning_rate = learning_rate;
             
             
             tic;
@@ -267,8 +267,11 @@ classdef Network < handle
             if isempty(obj.layers{1}.optimizer)
                 p = obj.hyperparams_;
             else
-                p = mergestructs(obj.hyperparams, obj.layers{1}.optimizer.hyperparams);
+                p = mergestructs(obj.hyperparams_, obj.layers{1}.optimizer.hyperparams);
             end
+        end
+        function C = get.cost(obj)
+            C = obj.layers{end}.C;
         end
 
     end % methods
