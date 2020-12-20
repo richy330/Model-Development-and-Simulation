@@ -1,5 +1,9 @@
 classdef ActivReLULeaky < IActivation    
-    
+     
+    properties
+        hyperparams = struct('Activation', 'Leaky ReLU')
+    end
+       
     methods
         function [activation] = a(obj, z)
             activation = max(z, 0.1*z);    

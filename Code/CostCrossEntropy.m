@@ -1,8 +1,12 @@
 classdef CostCrossEntropy < ICost
     
+    properties
+        hyperparams = struct('Costfunction', 'Cross-Entropy')
+    end
+    
     methods
         function f_cost = cost(obj, a, y)
-            f_cost = -(sum(y*log(a) + (1-y)*log(1-a), 'all'));
+            f_cost = -(sum(y.*log(a) + (1-y).*log(1-a), 'all'));
         end
         
         function cost_der = derivative(obj, a, y)

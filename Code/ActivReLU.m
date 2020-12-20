@@ -1,5 +1,10 @@
 classdef ActivReLU < IActivation
+       
+    properties
+        hyperparams = struct('Activation', 'ReLU')
+    end
     
+     
     methods
         function [activation] = a(obj, z)
             activation = max(z, 0);    

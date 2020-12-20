@@ -1,4 +1,8 @@
 classdef OptimizerSGD < IOptimizer & matlab.mixin.Copyable
+    
+    properties
+        hyperparams = struct('Optimizer', 'SGD')
+    end
 
     methods
         %% Get gradient

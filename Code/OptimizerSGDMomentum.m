@@ -4,7 +4,7 @@ classdef OptimizerSGDMomentum < IOptimizer & handle & matlab.mixin.Copyable
         beta
         dCdW_mom
         dCdb_mom
-        hyperparams = struct()
+        hyperparams = struct('Optimizer', 'SGD')
     end
     
     methods

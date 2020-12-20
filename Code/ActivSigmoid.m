@@ -1,7 +1,8 @@
 classdef ActivSigmoid < IActivation
-    %UNTITLED4 Summary of this class goes here
-    %   Detailed explanation goes here
     
+    properties
+        hyperparams = struct('Activation', 'Sigmoid')
+    end
     
     methods
         function [activation] = a(obj, z)
