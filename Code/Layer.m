@@ -12,6 +12,7 @@ classdef Layer < handle
         a {mustBeFinite, mustBeReal, mustBeNumeric}                        % activation = activ_func(z)
         b {mustBeFinite, mustBeReal, mustBeNumeric}
         z {mustBeFinite, mustBeReal, mustBeNumeric}                        % weighted input        
+        C {mustBeFinite, mustBeReal, mustBeNumeric}                        % Cost for each Trainingexample
         W {mustBeFinite, mustBeReal, mustBeNumeric}                        % weight-matrix
         dsigma_dz {mustBeFinite, mustBeReal, mustBeNumeric}                % gradient of sigma function with respect to z
         delta {mustBeFinite, mustBeReal, mustBeNumeric}                    % error-vector
@@ -78,6 +79,7 @@ classdef Layer < handle
             
             if isempty(obj.next)
                 obj.delta = obj.cost_func.derivative(obj.a, y) .* obj.dsigma_dz;
+                obj.C = obj.cost_func.cost(obj.a, y);
             elseif ~isempty(obj.prev)
                 obj.delta = (obj.next.W * obj.next.delta) .* obj.dsigma_dz;
             end
