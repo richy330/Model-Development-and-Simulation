@@ -27,16 +27,10 @@ classdef OptimizerRMSProp < IOptimizer & matlab.mixin.Copyable
             obj.state_eta_W = obj.gamma.*obj.state_eta_W + (1-obj.gamma).*dCdW.^2;
             obj.state_eta_b = obj.gamma.*obj.state_eta_b + (1-obj.gamma).*dCdb.^2;
         end
-        
-        %% Get gradient
-        function [dCdW, dCdb] = get_gradient(obj, parent_layer)
-            dCdW = [parent_layer.delta * parent_layer.prev.a']';
-            dCdb = sum(parent_layer.delta, 2);
-        end
             
         %% Descend
         function descend(obj, parent_layer, eta_m, lambda)            
-            [dCdW, dCdb] = obj.get_gradient(parent_layer);
+            [dCdW, dCdb] = get_gradient(parent_layer);
             
             [eta_W, eta_b] = obj.get_adaptive_learningrate(eta_m);
             W_corr = eta_W .* dCdW + eta_m*lambda.*parent_layer.W;

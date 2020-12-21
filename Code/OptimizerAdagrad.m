@@ -10,20 +10,14 @@ classdef OptimizerAdagrad < IOptimizer & matlab.mixin.Copyable
     methods
         %% Get Adaptive Learningrate
         function [adaptive_eta_W, adaptive_eta_b] = get_adaptive_learningrate(obj, eta_m)
-            adaptive_eta_W = eta_m ./ sqrt(obj.state_W);
-            adaptive_eta_b = eta_m ./ sqrt(obj.state_b);
-        end
-        
-        %% Get gradient
-        function [dCdW, dCdb] = get_gradient(obj, parent_layer)
-            dCdW = [parent_layer.delta * parent_layer.prev.a']';
-            dCdb = sum(parent_layer.delta, 2);
+            adaptive_eta_W = eta_m ./ sqrt(obj.state_W + 1e-4);
+            adaptive_eta_b = eta_m ./ sqrt(obj.state_b + 1e-4);
         end
             
         %% Descend
         function descend(obj, parent_layer, eta_m, lambda)            
             [eta_W, eta_b] = obj.get_adaptive_learningrate(eta_m);            
-            [dCdW, dCdb] = obj.get_gradient(parent_layer);
+            [dCdW, dCdb] = get_gradient(parent_layer);
 
             parent_layer.W = (1 - eta_W*lambda).*parent_layer.W - eta_W .* dCdW;
             parent_layer.b = parent_layer.b - eta_b .* dCdb;

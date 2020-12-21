@@ -6,7 +6,7 @@ classdef IOptimizer < handle
     end
     
     methods(Abstract)
-        get_gradient(obj, layer)
+        %get_gradient(obj, layer)
         descend(obj, layer)
     end
 end
