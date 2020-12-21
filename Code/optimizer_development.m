@@ -14,23 +14,24 @@ monitor.x_normalization = [T_me_offset, T_me_scaling];
 monitor.y_normalization = [P_me_offset, P_me_scaling];
 
 monitor.plotting_benchmark = true;
-monitor.plotting_abs_deviation = true;
-monitor.plotting_rel_deviation = true;
+monitor.plotting_abs_deviation = false;
+monitor.plotting_rel_deviation = false;
 monitor.plotting_cost = false;
-monitor.plot_intervall = 4000;
+monitor.plot_intervall = 10;
 
 
 
 %% Network
-beta = 0.8;
-nn = Network([1,100,100,1], ActivSigmoid, CostCrossEntropy, OptimizerRMSProp(0.8));
+beta = 0.9;
+gamma = 0.995;
+nn = Network([1,100,100,1], ActivReLU, CostQuadratic, OptimizerAdam(beta, gamma));
 nn.monitor = monitor;
 
 
 %% training
-learning_rate = 0.05;
-epochs = 12000;
-lambda = 0.00;
+learning_rate = 0.01;
+epochs = 1000;
+lambda = 0.0000000;
 
 tic
 nn.train(T_train, P_train, learning_rate, epochs, [], lambda);

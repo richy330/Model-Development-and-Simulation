@@ -10,7 +10,7 @@ classdef ActivLinear < IActivation
         end
         
         function [da_dz] = dsigma_dz(obj, z)
-        	da_dz = 1;    
+        	da_dz = ones(size(z));    
         end
     end
 end

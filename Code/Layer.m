@@ -78,7 +78,8 @@ classdef Layer < handle
             % corresponding layer, storing error parameter 'delta'
             
             if isempty(obj.next)
-                obj.delta = obj.cost_func.derivative(obj.a, y) .* obj.dsigma_dz;
+                dCda = obj.cost_func.derivative(obj.a, y);
+                obj.delta =  dCda .* obj.dsigma_dz;
                 obj.C = obj.cost_func.cost(obj.a, y);
             elseif ~isempty(obj.prev)
                 obj.delta = (obj.next.W * obj.next.delta) .* obj.dsigma_dz;

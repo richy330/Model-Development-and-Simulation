@@ -38,6 +38,7 @@ classdef Network < handle
             end
             
             obj.structure = nn_structure;
+            obj.hyperparams_.Networkstructure = nn_structure;
             obj.layers = cell(1, numel(nn_structure));
             obj.total_epochs = 1;
             
@@ -59,7 +60,7 @@ classdef Network < handle
                 obj.n_weights = obj.n_weights + numel(layer.W);
                 obj.n_biases = obj.n_biases + numel(layer.b);
             end
-            %obj.layers{end}.activ_func = ActivReLULeaky;
+            obj.layers{end}.activ_func = ActivLinear;
         end % Constructor
         
         %% Forwarding and Backpropagation
