@@ -9,6 +9,7 @@ classdef MonitorPlotter < handle
         plotting_cost = false
         benchmark_xdata
         benchmark_ydata
+        plot_delimiter
         x_normalization
         y_normalization
         costs
@@ -35,30 +36,33 @@ classdef MonitorPlotter < handle
                 return
             end
 
-            benchmark_x = obj.benchmark_xdata;
-            benchmark_y = obj.benchmark_ydata;
-            y_nn = parent_network.forward(benchmark_x);
+            x_plot = obj.benchmark_xdata(1,:);
+            y_plot = obj.benchmark_ydata(1,:);
+            x_plot(~obj.plot_delimiter) = nan;
+            y_plot(~obj.plot_delimiter) = nan;
+            
+            y_nn = parent_network.forward(obj.benchmark_xdata);
             % if normalizing-coefficients were given, denormalize the
             % plot-data
             if ~isempty(obj.x_normalization)
-                benchmark_x = Normalizer.denormalize(benchmark_x, obj.x_normalization(1), obj.x_normalization(2));
+                x_plot = Normalizer.denormalize(x_plot, obj.x_normalization(1), obj.x_normalization(2));
             end
             if ~isempty(obj.y_normalization)
-                benchmark_y = Normalizer.denormalize(benchmark_y, obj.y_normalization(1), obj.y_normalization(2));
+                y_plot = Normalizer.denormalize(y_plot, obj.y_normalization(1), obj.y_normalization(2));
                 y_nn = Normalizer.denormalize(y_nn, obj.y_normalization(1), obj.y_normalization(2));
             end
-            delta_y_abs = y_nn-benchmark_y;
-            delta_y_rel = delta_y_abs ./ benchmark_y * 100;
+%             delta_y_abs = y_nn-benchmark_y;
+%             delta_y_rel = delta_y_abs ./ benchmark_y * 100;
             
             hyperparams = parent_network.hyperparams;
             if obj.plotting_rel_deviation
-                obj.plot_rel_dev(benchmark_x, delta_y_rel, hyperparams, epoch);
+                obj.plot_rel_dev(x_plot, delta_y_rel, hyperparams, epoch);
             end
             if obj.plotting_abs_deviation
-                obj.plot_abs_dev(benchmark_x, delta_y_abs, hyperparams, epoch);
+                obj.plot_abs_dev(x_plot, delta_y_abs, hyperparams, epoch);
             end
             if obj.plotting_benchmark
-                obj.plot_benchmark(benchmark_x, benchmark_y, y_nn, hyperparams, epoch);
+                obj.plot_benchmark(x_plot, y_plot, y_nn, hyperparams, epoch);
             end
             if obj.plotting_cost
                 obj.plot_cost(hyperparams, epoch)

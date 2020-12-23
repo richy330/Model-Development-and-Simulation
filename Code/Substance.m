@@ -17,14 +17,14 @@ classdef Substance < handle
     
     methods
         
-        function obj = Substance(Name)
+        function obj = Substance(name)
             % CONSTRUCTOR OF CLASS SUBSTANCE
-            obj.name = Name;
-            obj.parameter(); 
+            obj.name = name;
+            obj.set_parameters(); 
             obj.omega();
         end
         
-        function parameter(obj)
+        function set_parameters(obj)
             % PARAMETER DEFINITION
             % allocates the respective Parameters relevant for the 
             % Calculations based on given Substance

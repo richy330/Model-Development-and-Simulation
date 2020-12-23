@@ -15,9 +15,9 @@ classdef PengRobinson < handle
     
     methods
         
-        function obj = PengRobinson(Substance1)
+        function obj = PengRobinson(Substance)
              
-            obj.Substance = Substance(Substance1);
+            obj.Substance = Substance;
 
         end %Constructor
                        

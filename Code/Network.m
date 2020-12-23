@@ -4,10 +4,10 @@ classdef Network < handle
     
     properties
         layers     
-        structure
-        n_weights
-        n_biases
-        total_epochs
+        structure {mustBeInteger, mustBePositive}
+        n_weights = 0
+        n_biases = 0
+        total_epochs = 1
         hyperparams_ = struct()
         hyperparams
         cost
@@ -40,14 +40,11 @@ classdef Network < handle
             obj.structure = nn_structure;
             obj.hyperparams_.Networkstructure = nn_structure;
             obj.layers = cell(1, numel(nn_structure));
-            obj.total_epochs = 1;
             
             % setting up layers, copy(optimizer) needed to provide unique
             % optimizer for every layer, not a handle to the same optimizer
             prev_layer = Layer(nn_structure(1), nn_structure(1), activ_func, cost_func, copy(optimizer));
             obj.layers{1} = prev_layer;
-            obj.n_biases = 0;
-            obj.n_weights = 0;
             
             for i = 2:numel(nn_structure)
                 layer = Layer(nn_structure(i-1), nn_structure(i), activ_func, cost_func, copy(optimizer));

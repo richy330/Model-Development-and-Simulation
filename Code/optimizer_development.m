@@ -17,13 +17,13 @@ monitor.plotting_benchmark = true;
 monitor.plotting_abs_deviation = false;
 monitor.plotting_rel_deviation = false;
 monitor.plotting_cost = false;
-monitor.plot_intervall = 10;
+monitor.plot_intervall = 1000;
 
 
 
 %% Network
-beta = 0.9;
-gamma = 0.995;
+beta = 0.8;
+gamma = 0.99;
 nn = Network([1,100,100,1], ActivReLU, CostQuadratic, OptimizerAdam(beta, gamma));
 nn.monitor = monitor;
 
