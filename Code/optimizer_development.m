@@ -7,11 +7,12 @@
 clc
 close all
 
-load PRdata.mat
+% load PRdata.mat
 load Substancedata.mat
-Methane = PRdata.Methane;
-Ethane = PRdata.Ethane;
-Propane = PRdata.Propane;
+
+load Methane.mat;
+load Ethane.mat;
+load Propane.mat;
 
 
 %% Setup trainingsdata
