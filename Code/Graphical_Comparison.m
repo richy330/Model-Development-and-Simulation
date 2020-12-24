@@ -8,9 +8,9 @@ function graphical_comparison(names, Data)
     
     for n_inputs = 1:numel(Data)
         
-        Input = Data{n_inputs}{1};
-        Results = Data{n_inputs}{2};
-        PR = Data{n_inputs}{3};
+        Input = Data{n_inputs}{1};  % Input Methane/Ethane/Propane
+        Results = Data{n_inputs}{2};% output ...
+        PR = Data{n_inputs}{3};     % PR Class containing T,P,Critical Data
 
         T = Input(1,:)*T_max;
         P = Results(1,:)*P_max;

@@ -17,7 +17,7 @@ classdef Normalizer
             inp_max = max(inputsets, [], 2);
             inp_min = min(inputsets, [], 2);
             
-            scaling = (lim_max-lim_min) ./ (inp_max-inp_min);
+            scaling = (lim_max-lim_min) ./ (inp_max - inp_min);
             scaled = inputsets .* scaling;
             offset = min(scaled, [], 2) - lim_min;
             normalized = scaled - offset;

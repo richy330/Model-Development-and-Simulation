@@ -2,15 +2,13 @@
 % Main File
 
 %% Code
-% Loading of Data to run
+%% Loading of Data to run
 load Methane.mat
 load Ethane.mat
 load Propane.mat
-load Butane.mat
-load Pentane.mat
-load Hexane.mat
 
-% Setup trainingsdata
+
+%% Setup trainingsdata
 
 [~, N_coloumns_Methane] = size(Methane.Ts');
 [~, N_coloumns_Ethane] = size(Ethane.Ts');
@@ -33,8 +31,6 @@ Input_Propane = [ Propane.Ts'/T_max;  repmat([Propane.Substance.antoine_A/x_1;  
 
 Input = [Input_Methane, Input_Ethane, Input_Propane];
 
-
-
 Results_Methane = [Methane.Ps'/P_max; Methane.Vms'./[V_max_1; V_max_2]];
 Results_Ethane = [Ethane.Ps'/P_max; Ethane.Vms'./[V_max_1; V_max_2]];
 Results_Propane = [Propane.Ps'/P_max; Propane.Vms'./[V_max_1; V_max_2]];
@@ -43,24 +39,26 @@ Results = [Results_Methane, Results_Ethane, Results_Propane];
 
 Data = {{Input_Methane, Results_Methane, Methane}, {Input_Ethane, Results_Ethane, Ethane}, {Input_Propane, Results_Propane, Propane}};
 
-% Setting up the NN to train
-nn = Network([5,30,40,40,3],"sigmoid", "cross-entropy");
+%% Setting up the NN to train
+nn = Network([5,20,20,3],"sigmoid", "cross-entropy");
 
 disp("--------------------------------NEW RUN--------------------------------")
 
 %load("NN-experiment-2")
 
-% Chance of which parameters to use
+%% Chance of which parameters to use
 lambda = 0.0;
-stepsize = 3;
+stepsize = 1;
 limit = 15;
 counter = inf;
 average_error_prev = 0;
-factor = 0.95;
+factor = 0.97;
+epochs = 1;
+batchsize = 128;
 
 tic
-for run = 1:100
-   nn.train(Input, Results, 32, stepsize);
+for run = 1:700
+   nn.train(Input_Methane, Results_Methane, stepsize, epochs, batchsize);
    average_error_new = mean(sum(abs(Results - nn.forward(Input)),1));
    
    if mod(run,50) == 0
@@ -82,14 +80,34 @@ for run = 1:100
 end
 toc
 
-plot(Propane.Ts, Propane.Vms)
+
 
 Name = "NN-experiment-2";
 save(Name, "nn");
 
-r = 100;
+%Graphical_Comparison({Name}, Data)
+%%
+x_train = Input_Methane;
+T_pr = Input_Methane(1,:);
+P_pr = Results_Methane(1,:);
+V1_pr = Results_Methane(2,:);
+y_predict = nn.forward(x_train);
+Ps_predict = y_predict(1,:);
+V1_predict = y_predict(2,:);
+V2_predict = y_predict(3,:);
+%%
 
-%nn.gradient_checking(Input(:,r), Results(:,r))
+figure
+plot(Propane.Ts, Propane.Vms(:,1))
+hold on
+plot(Propane.Ts, Propane.Vms(:,2))
+hold off
+legend({"V1 PR", "V2 PR"})
 
-
-Graphical_Comparison({Name}, Data)
+%%
+figure
+plot(T_pr, V1_predict)
+hold on
+plot(T_pr, V1_pr)
+hold off
+legend({"V1 nn", "V1 peng robinson"})

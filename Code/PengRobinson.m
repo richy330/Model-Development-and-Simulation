@@ -18,32 +18,31 @@ classdef PengRobinson < handle
         function obj = PengRobinson(Substance1)
              
             obj.Substance = Substance(Substance1);
-            %obj.Type = Type;
 
         end %Constructor
                        
         function Pressure_Calculation(obj,T,P)
-            %Caclulates the Saturation Pressure at a given Temperature T.
-            %If no start pressure is given via the input, the pressure will
-            %be set to the saturation pressure calculated with the
-            %Antoine-equation at the given Temperature. Every value in
-            %SI-Units.
+            % Calculates the Saturation Pressure at a given Temperature T.
+            % If no start pressure is given via the input, the pressure will
+            % be set to the saturation pressure calculated with the
+            % Antoine-equation at the given Temperature. Every value in
+            % SI-Units.
             %
-            %Input        Pressure_Calculation(T,P)
+            % Input        Pressure_Calculation(T,P)
             %
-            % -T:         "vector"  (E.g a temperature span in the range of
+            %  -T:         "vector"  (E.g a temperature span in the range of
             %                        interest. Maximal from tripple point to critical point)
-            % -p:         "vector"  (Vector of start values for the
+            %  -p:         "vector"  (Vector of start values for the
             %                        pressure. Must be the same size as T. Possibility to dispense
             %                        given with the following if-loop.)
             %
-            %Output
+            % Output
             %
-            % -Ts:         "vector" (Same size as T, Saturation
+            %  -Ts:         "vector" (Same size as T, Saturation
             %                        Temperature. I.e. the given temperature at the input) 
-            % -Ps:         "vector" (Same size as T, Calculated Saturation
+            %  -Ps:         "vector" (Same size as T, Calculated Saturation
             %                        Pressure for the temperatures given in the input)
-            % -Vms:        "vector" (Two colums: first one is the molar
+            %  -Vms:        "vector" (Two colums: first one is the molar
             %                        volume of the liquid, second one is the molar volume of the
             %                        vapor. Row size indentical with T.)
             
