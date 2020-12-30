@@ -81,27 +81,28 @@ monitor.plotting_benchmark = true;
 monitor.plotting_abs_deviation = false;
 monitor.plotting_rel_deviation = false;
 monitor.plotting_cost = false;
-monitor.plot_intervall = 25;
+monitor.plot_intervall = 10;
 
 
-%% Network
+%% Network Setup
 beta = 0.8;
 gamma = 0.99;
 nn = Network([3,250,6,250,1], ActivReLU, CostQuadratic, OptimizerAdam(beta, gamma));
-
-%%
 nn.monitor = monitor;
 
 
-%% training
-learning_rate = 0.4;
-epochs = 50;
-lambda = 0.03;
+%% Parameter Setup
+learning_rate = 0.2;
+learning_rate_decay = 0.9;
+epochs = 10;
+lambda = 0.5;       %L2 Regularization
 
+
+%% training
 while true
 tic
 nn.train(x_train, y_train, learning_rate, epochs, [], lambda);
 toc
-learning_rate = learning_rate*0.95;
+learning_rate = learning_rate*learning_rate_decay;
 end
 
