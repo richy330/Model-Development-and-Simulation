@@ -5,9 +5,9 @@ function [dCdW, dCdb] = get_gradient(parent_layer)
     dCdW = [parent_layer.delta * parent_layer.prev.a']';
     dCdb = sum(parent_layer.delta, 2);
     
-    % limits clip when norm(gradient) is equal to norm(ones-matrix)
-    dCdW_limit = sqrt(numel(dCdW));
-    dCdb_limit = sqrt(numel(dCdb));
+    % limits clip when norm(gradient) is equal to norm(twos-matrix)
+    dCdW_limit = sqrt(2*numel(dCdW));
+    dCdb_limit = sqrt(2*numel(dCdb));
     
     
     if norm(dCdW) > dCdW_limit
