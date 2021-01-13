@@ -1,5 +1,5 @@
 % Group 3: Substance Class
-% 6.10.2020 _
+% 6.10.2020
 
 classdef Substance < handle
     
@@ -90,8 +90,6 @@ classdef Substance < handle
                     obj.Pc = 30.2e5;
                     obj.Tc = 507.6;
                     obj.Mw = 86.18e-3; % [kg/mol]
-                otherwise
-                    error(['Substance ', obj.name, ' not implemented'])
             end % Switch
         end % Parameter
         
