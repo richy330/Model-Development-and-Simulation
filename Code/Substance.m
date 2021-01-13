@@ -1,5 +1,5 @@
 % Group 3: Substance Class
-% 6.10.2020
+% 6.10.2020 _
 
 classdef Substance < handle
     
@@ -17,14 +17,14 @@ classdef Substance < handle
     
     methods
         
-        function obj = Substance(Name)
+        function obj = Substance(name)
             % CONSTRUCTOR OF CLASS SUBSTANCE
-            obj.name = Name;
-            obj.parameter(); 
+            obj.name = name;
+            obj.set_parameters(); 
             obj.omega();
         end
         
-        function parameter(obj)
+        function set_parameters(obj)
             % PARAMETER DEFINITION
             % allocates the respective Parameters relevant for the 
             % Calculations based on given Substance
@@ -90,6 +90,8 @@ classdef Substance < handle
                     obj.Pc = 30.2e5;
                     obj.Tc = 507.6;
                     obj.Mw = 86.18e-3; % [kg/mol]
+                otherwise
+                    error(['Substance ', obj.name, ' not implemented'])
             end % Switch
         end % Parameter
         
