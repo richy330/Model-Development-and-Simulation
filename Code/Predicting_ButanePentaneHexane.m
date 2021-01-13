@@ -56,14 +56,14 @@ x_set = [...
     ame, aet, apr, ahe, ape, abu];
 y_set = [...
     Pme, Pet, Ppr, Phe, Ppe, Pbu];
-numel_train = numel([Tme, Tet, Tpr, The, Tpe]);
+numel_train = numel([Tme, Tet, Tpr]);
 
 [x_set, x_offset, x_scaling] = Normalizer.autonormalize(x_set, [-4,4]);
 [y_set, y_offset, y_scaling] = Normalizer.autonormalize(y_set, [0, 1]);
 x_train = x_set(:, 1:numel_train);
 y_train = y_set(:, 1:numel_train);
-x_but = x_set(:, numel_train+1:end);
-y_but = y_set(:, numel_train+1:end);
+x_but_pent_hex = x_set(:, numel_train+1:end);
+y_but_pent_hex = y_set(:, numel_train+1:end);
 
 me_end = numel(Tme); et_end = me_end + numel(Tet); pr_end = et_end + numel(Tpr);
 he_end = pr_end + numel(The); pe_end = he_end + numel(Tpe); bu_end = pe_end + numel(Tbu);
@@ -81,28 +81,34 @@ monitor.plotting_benchmark = true;
 monitor.plotting_abs_deviation = false;
 monitor.plotting_rel_deviation = false;
 monitor.plotting_cost = false;
-monitor.plot_intervall = 10;
+monitor.plot_intervall = 100;
 
 
 %% Network Setup
-beta = 0.8;
-gamma = 0.99;
-nn = Network([3,250,6,250,1], ActivReLU, CostQuadratic, OptimizerAdam(beta, gamma));
+beta = 0.9;
+gamma = 0.9;
+nn = Network([3,500,6,500,1], ActivReLU, CostQuadratic, OptimizerAdam(beta, gamma));
 nn.monitor = monitor;
 
 
 %% Parameter Setup
-learning_rate = 0.2;
-learning_rate_decay = 0.9;
-epochs = 10;
-lambda = 0.5;       %L2 Regularization
+learning_rate = 0.08;
+learning_rate_decay = 0.95;
+epochs = 100;
+
+lambda1 = 0.01;       %L1 Regularization
+lambda2 = 0.04;       %L2 Regularization
+L1_gain = 1;
+L2_gain = 1;
 
 
 %% training
-while true
+for i=1:50
 tic
-nn.train(x_train, y_train, learning_rate, epochs, [], lambda);
+nn.train(x_train, y_train, learning_rate, epochs, [], lambda1, lambda2);
 toc
 learning_rate = learning_rate*learning_rate_decay;
+lambda1 = lambda1 * L1_gain
+lambda2 = lambda2 * L2_gain
 end
 
