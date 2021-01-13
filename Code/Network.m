@@ -74,7 +74,7 @@ classdef Network < handle
         end
         
         %% Training
-        function train(obj, xbatch, ybatch, learning_rate, epochs, minibatch_size, lambda, randomize)
+        function train(obj, xbatch, ybatch, learning_rate, epochs, minibatch_size, lambda1, lambda2, randomize)
             % Run given batch, then update weights and biases according
             % to backpropagation
             % xbatch... input-trainingdata, rows=input-neurons, columns=training-examples
@@ -82,10 +82,12 @@ classdef Network < handle
             % learning_rate ... size of applied adjustment between training-iterations
             % epochs ... number of repeated loops over testdata, default=1            
             % minibatch_size... size of minibatch, default=32
-            % lambda... L2 Regularization coeeficient, default=0
+            % lambda1... L1 Regularization coeeficient, default=0
+            % lambda2... L2 Regularization coeeficient, default=0
             % randomize... Boolean, training-examples will be shuffled when true, default=True
-            if nargin < 8 || isempty(randomize), randomize = true; end
-            if nargin < 7 || isempty(lambda), lambda = 0; end
+            if nargin < 9 || isempty(randomize), randomize = true; end
+            if nargin < 8 || isempty(lambda2), lambda2 = 0; end
+            if nargin < 7 || isempty(lambda1), lambda1 = 0; end
             if nargin < 6 || isempty(minibatch_size), minibatch_size = 32; end
             if nargin < 5 || isempty(epochs), epochs = 1; end
             
@@ -143,7 +145,7 @@ classdef Network < handle
 
                     % performing gradient descent on all layers
                     for l = 2:numel(obj.layers)
-                        obj.layers{l}.descend(eta_m, lambda);
+                        obj.layers{l}.descend(eta_m, lambda1, lambda2);
                     end
                 end % processing batch
                 

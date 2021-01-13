@@ -34,17 +34,20 @@ classdef OptimizerAdam < IOptimizer & matlab.mixin.Copyable
         end
             
         %% Descend
-        function descend(obj, parent_layer, eta_m, lambda)            
+        function descend(obj, parent_layer, eta_m, lambda1, lambda2)            
             [dCdW, dCdb] = get_gradient(parent_layer);
+            [eta_W, eta_b] = obj.get_adaptive_learningrate(eta_m);            
+            W_reg_corr = get_regularization(parent_layer, lambda1, lambda2);
+            W_reg_corr = W_reg_corr * eta_m;
             
-            [eta_W, eta_b] = obj.get_adaptive_learningrate(eta_m);
-            W_corr = obj.beta*obj.dCdW_mom + (1-obj.beta)*(eta_W.*dCdW + eta_m*lambda.*parent_layer.W);
-            b_corr = obj.beta*obj.dCdb_mom + (1-obj.beta)*(eta_b.*dCdb);
-            parent_layer.W = parent_layer.W - W_corr;
-            parent_layer.b = parent_layer.b - b_corr;         
+            W_grad_corr = obj.beta*obj.dCdW_mom + (1-obj.beta)*eta_W.*dCdW;
+            b_grad_corr = obj.beta*obj.dCdb_mom + (1-obj.beta)*eta_b.*dCdb;
             
-            obj.dCdW_mom = W_corr;
-            obj.dCdb_mom = b_corr;
+            parent_layer.W = parent_layer.W - W_grad_corr - W_reg_corr;
+            parent_layer.b = parent_layer.b - b_grad_corr;         
+            
+            obj.dCdW_mom = W_grad_corr;
+            obj.dCdb_mom = b_grad_corr;
             obj.update_eta_state(dCdW, dCdb);
         end
     end

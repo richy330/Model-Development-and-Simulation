@@ -91,10 +91,10 @@ classdef Layer < handle
         end % backpropagation
             
         %% Descend
-        function descend(obj, eta_m, lambda)
+        function descend(obj, eta_m, lambda1, lambda2)
             % passing obj-reference to optimizer, who will perform descend
             % on obj
-            obj.optimizer.descend(obj, eta_m, lambda)
+            obj.optimizer.descend(obj, eta_m, lambda1, lambda2)
         end
         
         
